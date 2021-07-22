@@ -1,0 +1,2474 @@
+---
+title: "How has COVID-19 Tested our Collective Ability to Scale and Surge Public Health"
+date: "Date: 06/10/2021"
+author:
+  - name: Jiansong Zhao 490444421
+  - name: Jeremy Tan 480550367
+  - name: Jielin Feng 480019484
+  - name: Rhuten Yeole 480383259
+  - name: Quang Vinh Hoang 490037131
+  - name: Xingwei Zhou 480154774
+
+output:
+  #html_document:
+  bookdown::html_document2:
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    code_folding: hide
+    number_sections: true
+    theme: flatly
+    highlight: kate
+    css: style.css
+
+---
+
+
+
+```{r setup, include=FALSE, message = FALSE,warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(DT)
+library(knitr)
+library(sparkline)
+library(maps)
+library(plotly)
+```
+
+
+Github Repository: https://github.sydney.edu.au/VHOA0395/HealthR_10-DATA3888
+
+Shiny app was deployed at: https://healthr10.shinyapps.io/HealthR_10/
+
+
+# Abstract
+
+COVID-19 has had a huge impact on the lives of people all over the world. During this period of time, various countries have taken measures to deal with this crisis. The measures taken by some of these countries have effectively controlled the spread of the epidemic, while the measures taken by more other countries failed to effectively control the increasing number of cases. The problem focused on questioning how each country’s  responses to the novel COVID-19 pandemic led them to various performances among countries with some performing similarly to each other while others performing exceptionally poorly.
+
+The proposed metric to calculate country performance consolidates areas of three (3) different policies including governmental policies, testing policies and vaccinations. Finally, this report describes areas of recommendations that would improve on the scoring metric and other areas of potential future research. The project identified that the United Arab Emirates performed the best while there were four (4) clusters of countries that performed similarly to each other.
+
+# Introduction 
+
+In March 2020, the World Health Organisation declared COVID-19 a global pandemic following the alarming levels of global spread. Forcing the closure of millions of non-essential businesses resulting in the loss of millions of jobs (International Labour Organisation, 2021), while changing what we would consider as "normal". Despite there being a global lockdown, every country approached the pandemic with different government and testing policies resulting in some countries being able to control the spread of the COVID-19 virus while other countries struggled with the spread. From late December 2020, when COVID-19 vaccines started being distributed to various countries, the various governmental bodies organised their vaccine rollout plans differently as well, resulting in some countries having the appropriate infrastructure and rollout plan while other countries struggled with taking the appropriate measures for their vaccine rollout. Thus, it is imperative that the current pandemic is studied for the best government responses, testing and vaccination trends that would aid us in future pandemic situations. 
+
+# Target Audience
+
+The target audience for this project are students and academia in research, specifically those interested in studying COVID-19. 
+
+# Aim & Objectives
+
+To discover which specific country’s model/rollout model was most effective and which countries performed similarly, areas such as policy health response, vaccinations and testing were implicated. To assist in the scalability and surge in public health, the project aims to:
+
+1. Assess the advantages and disadvantages of using different visuals to display findings from each area of interest. 
+2. Highlight the impact of different policies being implemented at different stages of the COVID-19 pandemic has on country performance.
+3. Deploy a functioning dashboard that will be able to communicate the information and analytics appropriately to the target audience using Machine Learning where necessary. 
+
+# Workflow
+
+
+```{r pressure, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("figure/figure 1.png")
+```
+Figure 1.0: Project Workflow
+
+Secondary research was the main research method used to source data. Here, secondary research revealed elements of Government Policies, Testing and Vaccination that would aid the team in identifying the trends and potential factors related to successfully implementable policies. To aid the study in the three (3) areas identified, data was obtained from:
+
+- Blavatnik School of Government: COVID-19 Government Response Tracker contained information about various policy responses that governments have taken to respond to the pandemic.
+- World Health Organisation: contained information about general COVID-19 trends.
+- Our World in Data: multiple datasets were used from OWID. Data included information about testing, vaccinations, and testing policies.
+- Kaggle: contained information about the vaccine programs used by countries around the world.
+
+`Figure 1.0` presents the steps taken by the group to implement the final shiny application. While Policies, Vaccinations and Testing are the three (3) areas of interest, a scoring metric was developed that would incorporate the three (3) areas and produce an overall score for each country.
+
+# Feature Engineering
+
+## Conversion to Appropriate Data Type
+
+   Across all the datasets, the date column was of the class "character" rather than the "Date" class. As this would result in issues when generating visualisations, the function **as.Date()** was used to convert the dates from "character" to "Date" class. Additionally, for the dataset used for forecasting, the **ts()** function was used to transform the data into time series format.
+
+## Dealing with Missing Values
+
+Some of the datasets that were used had numerous missing values. As NA values could potentially cause issues with data visualisations, removing them was necessary to ensure visualisations were properly visualised. There were two methods used to remove NA values. For the testing dataset, the function **na.omit()** was used to remove missing values. For the vaccination dataset, a function called **completeFun** was created. This function took in a dataset and a column in that dataset, and removed any missing values from the desired column.
+ 
+Data selection was a crucial point for the dataframe(s) relating to the Summary tab of the dashboard. Here, countries with more than 50% missing values were removed from the three datasets used (vaccination, testing, and government policies) as these countries would affect the accuracy of the results due to insufficient data. Furthermore, all NA values were replaced with zero (0) for calculations. Only countries with data in all three datasets were selected as the performance score was calculated based on these areas.
+
+
+## Combination of datasets
+
+For the various data to be visualised on the world map, the data had to be merged with the world map dataframe. To achieve this, the **merge()** function was used. Merging by x = “region” and y = Entity”. 
+
+## Filtering of Data 
+
+Lastly, any data before 15 February 2020 was removed as the COVID-19 outbreak start date identified as 15 February 2020 for this project.
+
+# Methodology
+
+## Visualisations
+
+### Global Summary 
+
+For global summary, two (2) types of visualisations were used - a bar chart and a datatable. In this section of the dashboard, general information about COVID-19 trends were visualised.
+
+The first tab is the **Global Epidemic Curve** tab, which allows users to see the number of new cases or deaths over time for each region in an interactive stacked bar chart identified by the World Health Organisation. Users will also be able to facet the graph to see the new cases/deaths separated by region. The second tab, **Cases and Deaths**, displays a datatable that shows new cases and deaths, as well as total cases and deaths for each country. The table is sorted by new cases and is updated daily.
+
+### Public Health Response
+
+For public health response, two (2) types of visualisations were used - a world map and a datatable. In this section of the dashboard, information about policy responses by each country was visualised.
+
+The first tab, **World Map**, allows users to select a policy (such as School Closure) and a date. The dashboard will then display an interactive world map that shows the level of response taken by each country for the selected policy. This method of visualisation was chosen as it allows users to view the response taken by each country on a specific date, rather than having to view it one at a time. The second tab, **By Country**, displays a datatable that shows the current and highest response taken by each country up until a certain date. This method of visualisation was chosen as it enables users to see what response a country has taken across all policies of interest. 
+
+### Vaccination
+
+For vaccination, four (4) types of visualisations were selected. Namely, World Map, Line graphs, Bar charts and a Waffle plot. Here, the total number of vaccinations, vaccination programs adopted, vaccination trends and vaccinations by region were studied. 
+
+With respect to the app implementation, these four (4) areas were allocated sub-tabs. For **Total Vaccinations**, an interactive World Map was selected. Where the user would be able to observe the total and daily vaccinations. Next, in the **Vaccination Trends sub-tab**, multiple countries can be selected to compare the **Total Vaccinations** or the **Daily Vaccinations** using an interactive line graph. For **Vaccine Programs Adopted**, an interactive world map was used to visualise the various vaccine programs adopted in each country. Additionally, a Waffle chart was selected to show the distribution of the **Top 10** Vaccine Programs adopted. Lastly, for **Vaccinations by Region** a bar graph was selected to compare the various countries' vaccinations in each region. 
+
+### Testing
+
+For testing, three (3) types of visualisations were selected to visualise the Testing data. World Map, Linear graphs and forecast plots. Here, testing policy, testing trends, and forecasting for testing were studied.
+
+
+With respect to the app implementation, these three (3) areas were allocated sub-tabs. For **Testing policy**, an interactive World Map was selected. Where the user would be able to observe the testing policies for various countries/regions on a specific date. Next, in the **Testing Trends** sub-tab, multiple countries/regions can be selected to visualise and compare the trend of **Total Testing** or the **Daily Testing** using an interactive linear graph. Lastly, for **Forecasting**, an ARIMA forecast algorithm was used to predict the number of new daily testing cases and total testing cases for 15 days ahead.
+
+### Summary 
+
+
+Faceted line graphs were implemented for Testing Score, Vaccination Score, Policy Score and Overall Performance tab to show countries’ performance responded to COVID-19 over time in testing, vaccination, government policy or all these areas combined. A faceted line graph was used as this would help users compare performance across countries without having too many lines on a graph when too many countries are selected.
+
+For Performance Table tab, a data table was used to display how countries performed in COVID-19, this displayed countries’ name, performance trend and performance score, order of countries can be rearranged by their performance score, that way, users would be able to quickly identify countries performing the best or worst. The performance score shown on the data table was the average of overall performance over time.
+
+For Overall Performance in Clusters tab, faceted line graph, dendrogram and a world map were applied to show how countries performed similarly. In a faceted line graph, users are allowed to select countries and number of clusters, each facet represents a cluster which contains a group of countries performed similarly to each other, a dendrogram was also provided if users are interested in how clusters are composed. The world map then displays all countries with their corresponding cluster group on a map.
+
+## Machine Learning Models
+
+### Forecasting
+
+To perform the forecast, the ARIMA forecasting method was selected. Autoregressive Integrated Moving Average (ARIMA) is an algorithm that predicts future values using past time series data. The ARIMA algorithm creates forecasts using the provided time series data, ‘lags’ and the lagged forecasting errors. Although there are a number of steps required to ensure the datetime features are not moving, the auto-arima() function provided in R makes the process easier as the (S)ARIMA parameters would be computed automatically by the machine.
+
+### Min-Max Scaling
+
+**Min-Max Scaling** is an estimator method used to **rescale** individual features to a given range. Typically, the range selected is either [0, 1] or [-1, 1]. 
+
+### Hierarchical Clustering
+
+**Hierarchical Clustering** is an algorithm that groups objects similar in nature into smaller groups called **Clusters**. Each **Cluster** is easily distinguishable from other **Clusters** due the objects in each **Cluster** sharing similar properties. 
+
+## Calculating Overall Performance
+
+The three (3) areas used to calculate the overall performance score were Vaccinations, Testing, and Policy Response. Appropriate variables had to be selected to calculate the respective scores for each area. To calculate the Vaccination score, the variable **Daily_vaccinations_per_millIon** was chosen as it best represented how a country performed in terms of vaccinations when taking population into account. To calculate the Testing score, the variable **New_tests_per_thousand** was used for the same reason as the vaccination score. For Policy score, **ContainmentHealthIndex** was chosen as it combined all the necessary policies relating to public health and represented how strict each country’s policies over time. 
+
+To obtain the vaccination and testing scores, **Daily_vaccinations_per_millions** and **New_tests_per_thousand** were normalised by using min-max scaling. Min-max scaling was used as it is the most common and simple scaling method. A function called **scaleMinMax** was created to scale the data between a range from 0 to 1. The final vaccination and testing scores were calculated by multiplying the normalised values by 100. As **ContainmentHealthIndex** was already between 0-100 for all countries, further normalisation was not required. The final performance score was calculated by summing the three scores together, since there was no study or evidence showing any of these three areas would have a bigger impact to COVID-19 than others, vaccination, testing and government policy are assumed to have equal weight in calculating overall performance.The scores were then smoothed using the Lowess method with a bandwidth of 0.05. This bandwidth was chosen as it smoothed the graphs the best among all bandwidths.
+
+
+## Clustering on Overall Performance 
+
+Hierarchical clustering was used to answer the aim. Clustering on time series of overall performance of each country was applied to explore which countries responded to COVID-19 similarly. Compared to other clustering methods, hierarchical clustering is easy to understand and implement. Additionally, a dendrogram was also used to show the hierarchical relationship between elements that would help end users better understand how clusters are conducted.
+
+Cosine distance was used to measure the distance of the matrix. This allowed the clustering to only focus on the shape and ignore magnitude and, as a result, countries with similar shape would be clustered in a group. **Ward.D2** was selected as the agglomeration method to construct a hierarchical cluster to implement Ward's clustering criterion. The Ward algorithm minimised the total variance of the cluster, thus ensuring countries in a cluster were the closest. 
+
+## Shiny Application Deployment
+
+```{r fig2, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("figure/figure2.png")
+```
+Figure 2.0: Homepage of the Shiny Application
+
+After the four (4) sections were completed, the shiny app dashboard frame was created using a mix of **navbarPage()**, **tabPanel()** and **tabsetPanel()** functions. The design of the dashboard was stored in the ui.R file while the feature engineering steps were included in the Global.R file and the implementation of the code was stored on the server.R file. In addition to these sections, two (2)  more main tabs were created to aid the reproducibility mentioned in the **Aims and Objectives** section. The two (2) tabs were **About** and **Documentation**. The **About** tab included basic information about the app while the **Documentation** tab explained the different sections of the application in detail to allow the user to fully understand the use and application of each tab. The home page of the deployed shiny application can be observed in `Figure 2.0 ` above. 
+
+# Findings & Results
+
+````{r }
+policy_raw = read.csv("Shiny_App/data/OxCGRT_latest.csv")
+vaccination_raw = read.csv("Shiny_App/data/vaccinations.csv")
+testing_raw = read.csv("Shiny_App/data/owid-testing.csv")
+# normalization function
+scaleMinMax <- function(x){
+  (x - min(x)) / (max(x) - min(x))
+}
+# smoothing function
+wrapLowess <- function(data, f) {
+  lowess_fit <- lowess(data, f = f)
+  lowess_fit$y
+}
+
+# selecting variables for score calculation
+vaccination = vaccination_raw %>% select(location,date,daily_vaccinations_per_million)
+testing_new = testing_raw %>% select(location,date,new_tests_per_thousand)
+policy_new = policy_raw %>% select(CountryName,Date,ContainmentHealthIndexForDisplay) 
+# changing dates to date data type with consistent format
+policy_new$Date <- as.Date(as.character(policy_new$Date),"%Y%m%d")
+testing_new$date = as.Date(testing_new$date)
+vaccination$date = as.Date(vaccination$date)
+# removing all countries with half missing values, and converting NAs to 0
+vac_country = vaccination %>% select(location,daily_vaccinations_per_million) %>% group_by(location) %>% summarise(missing_rate = sum(is.na(daily_vaccinations_per_million)) / n())
+vac_country = vac_country[which(vac_country$missing_rate <= 0.5),]
+test_country = testing_new %>% select(location,new_tests_per_thousand) %>% group_by(location) %>% summarise(missing_rate = sum(is.na(new_tests_per_thousand)) / n())
+test_country = test_country[which(test_country$missing_rate <= 0.5),]
+pol_country = policy_new %>% select(CountryName,ContainmentHealthIndexForDisplay) %>% group_by(CountryName) %>% summarise(missing_rate = sum(is.na(ContainmentHealthIndexForDisplay)) / n())
+pol_country = pol_country[which(pol_country$missing_rate <= 0.5),]
+testing_new$new_tests_per_thousand[is.na(testing_new$new_tests_per_thousand)] <- 0
+vaccination$daily_vaccinations_per_million[is.na(vaccination$daily_vaccinations_per_million)] <- 0
+policy_new$ContainmentHealthIndexForDisplay[is.na(policy_new$ContainmentHealthIndexForDisplay)] <- 0
+a = intersect(vac_country$location,test_country$location)
+# filtering countries with data in all three datasets and removing data before outbreak date
+countries = intersect(a,pol_country$CountryName)
+outbreak_date = "2020-02-15"
+vaccination = vaccination %>% select(location,date,daily_vaccinations_per_million) %>% filter(location %in% countries)
+testing_new = testing_new %>% select(location,date,new_tests_per_thousand) %>% filter(location %in% countries) %>% filter(date >= outbreak_date)
+policy_new = policy_new %>% select(CountryName,Date,ContainmentHealthIndexForDisplay) %>% filter(CountryName %in% countries) %>% filter(Date >= outbreak_date)
+
+# calculating vacciantion score and testing score by normalizing testing and vaccination data between countries
+date = min(testing_new$date)
+end_date = max(testing_new$date)
+testing_new$testing_score = 0.0
+while (date <= end_date){
+  testing_new[which(testing_new$date == date),]$testing_score = 
+    round(scaleMinMax(testing_new[which(testing_new$date == date),]$new_tests_per_thousand) * 100,2)
+  date = date + 1
+}
+
+
+date = min(vaccination$date)
+end_date = max(vaccination$date)
+vaccination$vaccination_score = 0.0
+while (date <= end_date){
+  vaccination[which(vaccination$date == date),]$vaccination_score = 
+    round(scaleMinMax(vaccination[which(vaccination$date == date),]$daily_vaccinations_per_million) * 100,2)
+  date = date + 1
+}
+
+# Averaging countries with multipule values, since there are countries contain more than one regions
+policy1 = policy_new %>% select(CountryName,Date, ContainmentHealthIndexForDisplay) %>% group_by(CountryName,Date) %>% summarise(policy_score = sum(ContainmentHealthIndexForDisplay)/n())
+names(policy1)[1] = "location"
+names(policy1)[2] = "date"
+
+# merging all three areas into one dataframe
+t_v <- merge(testing_new,vaccination ,by=c("location","date"),all.x=TRUE)
+total = merge(t_v,policy1,by=c("location","date"),all.x=TRUE)
+total$vaccination_score [is.na(total$vaccination_score)] <- 0
+total$testing_score [is.na(total$testing_score)] <- 0
+total$policy_score[is.na(total$policy_score)] <- 0
+
+# calculating overall performane by summing these three areas toghther
+total$index = total$testing_score+total$vaccination_score+total$policy_score
+
+# smoothing scores
+total = total %>% select(location,date,testing_score,vaccination_score,policy_score,index)
+total$testing_score_smooth = 0.0
+total$vaccination_score_smooth = 0.0
+total$policy_score_smooth= 0.0
+total$index_smooth = 0.0
+for (x in countries){
+  # index
+  total[which(total$location == x),]$index_smooth = 
+    wrapLowess(total[which(total$location == x),]$index, 0.05)
+  # testing
+  total[which(total$location == x),]$testing_score_smooth = 
+    wrapLowess(total[which(total$location == x),]$testing_score, 0.05)
+  # vaccination
+  total[which(total$location == x),]$vaccination_score_smooth = 
+    wrapLowess(total[which(total$location == x),]$vaccination_score, 0.05)
+  # policy
+  total[which(total$location == x),]$policy_score_smooth = 
+    wrapLowess(total[which(total$location == x),]$policy_score, 0.05)
+}
+
+# creating performance data table
+
+performance_mean = total %>% select (location,date,index) %>% group_by(location) %>% summarise(index_mean = sum(index)/n())
+
+performance_graph <- total %>% 
+  group_by(location) %>%
+  summarize(
+    TrendSparkLine = spk_chr(
+      index, type="line",
+      chartRangeMin = 0, chartRangeMax = max(date)
+    )
+  )
+
+performance_final <- left_join(performance_mean, performance_graph)
+performance_final <- performance_final[,c(1,3,2)]
+performance_final[,3] = round(performance_final[,3] ,2)
+
+dt=  datatable(performance_final, colnames=c("Country/Region", "Trend", "Performance Score"), rownames = F,
+               escape = F, options = list(order=list(list(2, "desc")), pageLength= 10, fnDrawCallback = htmlwidgets::JS(
+                 '
+            function(){
+            HTMLWidgets.staticRender();
+            }
+            '))) %>%
+  spk_add_deps()
+
+dt
+```
+Data table 3.0: Country/Region Performance in Clusters
+
+
+The overall performance score of each country was visualised in `Data table 3.0`. In general, findings include:
+
+- Most of the top countries have an increasing trend, indicating that countries with good performance tend to perform better over time.
+- The top five (5) countries that performed most effectively in response to COVID-19 were United Arab Emirates, Cyprus, Luxembourg, Denmark, and Bahrain. The United Arab Emirates performed the best with a score of 137.3.
+
+
+```{r}
+# creating cluster matrix 
+world_map <- map_data("world")
+world_map <- world_map %>%
+  mutate(region = replace(region, region == "UK","United Kingdom")) %>%
+  mutate(region = replace(region, region == "USA","United States")) %>%
+  mutate(region = replace(region, region == "USA", "United States Virgin Islands"))%>%
+  mutate(region = replace(region, region == "Democratic Republic of the Congo", "Congo"))%>%
+  mutate(region = replace(region, region == "Republic of Congo", "Congo"))%>%
+  mutate(region = replace(region, region == "Ivory Coast", "Cote d'Ivoire"))%>%
+  mutate(region = replace(region, region == "Czech Republic", "Czechia"))
+cluster_matrix <- total %>% 
+        dplyr::select(location, date, index_smooth) %>%
+        pivot_wider(names_from = location, values_from = index_smooth) %>%
+        arrange(date) %>% 
+        replace(is.na(.), 0) %>%
+        as.data.frame()
+      
+rownames(cluster_matrix) <- cluster_matrix$date
+cluster_matrix <- cluster_matrix %>% dplyr::select(-date)
+      
+# creating clusters using cosine distancing and ward.D2 clustering method     
+cluster_matrix_cosine_dist <- proxy::dist(t(cluster_matrix), method = "cosine")
+hclust_cluster <- hclust(cluster_matrix_cosine_dist, method = "ward.D2")
+# selecting number of clusters
+hclust_cluster_k <- stats::cutree(hclust_cluster, k = 5) %>% as.factor %>% as.data.frame()
+total$cluster <-  hclust_cluster_k[as.character(total$location), 1]
+total$cluster = as.integer(total$cluster)
+# removing duplicate rows
+clusters = total %>% select (location,cluster) %>% group_by(location) %>% summarise(c = sum(cluster)/n())
+
+# plotting world map displays countries in clusters
+world_map_cluster <- merge(world_map, clusters, 
+                                 by.x = "region", by.y = "location",
+                                 all.x = TRUE)
+world_map_cluster <- world_map_cluster[order(world_map_cluster$order), ]
+      
+world_map_cluster$c = as.character(world_map_cluster$c)
+cluster_map = ggplot(world_map_cluster,  
+       aes(x = long, y = lat, group = group, fill = c,region=region)) +
+        geom_polygon()  +
+        xlab("") + ylab("") + ggtitle("Map of World") +
+        theme_void() +
+        theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank())         +
+        labs(title = paste('COVID: Country/Region performance in clusters'),
+             fill = "")
+ggplotly(cluster_map)
+```
+Figure 4.0: Country/Region performance in clusters
+
+Countries that had available data had their performance divided into 5 clusters and visualised in `Figure 4.0`. The countries that responded similarly to COVID-19 were:
+
+- North America, Australia, Colombia, Argentina, and most Asian and African countries
+- Europe and Japan
+- New Zealand and Russia
+- South Korea and Taiwan
+- No countries performed similarly to Israel.
+
+The results of our project are generally very robust, because the data sets are found from trusted organizations such as WHO and Oxford. In addition, data with more than half of the missing values are eliminated to ensure the accuracy and robustness of the results. For generalisability, although a few countries lacked data, results were composed of approximately one hundred countries or regions around the world. Taking into account the fields of vaccination, testing, and public health, the results can be applied to many situations and various types of people around the world, therefore, the project is generalizable.
+
+# Conclusion & Recommendations
+This report examined how Government Policies, Vaccinations and Testing Policies played an important role in identifying which countries performed the best in response to the COVID-19 pandemic. Findings of the project have highlighted important areas that have led various countries to have different levels of control of the COVID-19 pandemic. By recognising which countries performed the best, we will be able to follow their lead for the various policies implemented to scale and surge public health to prepare for future pandemics. 
+
+In summary, this report has identified that the ‘best performing’ country to be the United Arab Emirates whose governmental policies in testing, vaccinations and other policies allowed it to perform better than other first world countries. In turn, this will allow for future governmental policies, testing and vaccination frameworks to be developed based on the United Arab Emirates’ model. 
+
+While there might not be much current research and data relating to this study, future research and data will greatly improve the results obtained. With more research and data, the metric system used to score the countries in this study could be improved with the incorporation of more features and data samples potentially creating a more accurate metric system.  
+
+# Limitations 
+Whilst the findings of this project can be applied in the future, some potential limitations should be noted. Firstly, at the time of the project, the instance of the COVID-19 pandemic was quite recent resulting in a lack of available data and prior research and studies carried out relating to the chosen topic. Secondly, while the data sources were reliable, there were numerous missing data entries in the datasets obtained, decreasing the sample size of data that the team was able to study and utilize for our visualisations and machine learning model implemented. Finally, long computational and loading times were observed during code compilation and loading of the dashboard. This could have been caused by the size of the data sets being used and some of the data being extracted directly from the website rather than using static data. 
+
+# Future Work
+A number of different areas of the study were briefly touched on but not studied indepthly as they would not have aided in answering the aims and objectives of the project.  Future work regarding each sub section leading to the “Summary” are potential areas for future research such as “Which Governmental Policies were most important to ensuring the control of COVID-19”. Furthermore, further incorporation of other areas such as GDP spending could be factored into the model to further improve the metric. 
+
+# Student Contributions
+
+- **Jiansong Zhao**: Performed visualisation and analysis on three areas combined involving machine learning technique and implemented it on shiny. 
+- **Jeremy Tan**: Team lead, project manager and designed the dashboard framework and slide deck. Also researched and developed relevant material to “Vaccination” and implemented it in the dashboard.  
+- **Jielin Feng**: Data gathering, visualisation and forecasting for Testing, implementation of “Testing” in the dashboard with Vinh.
+- **Rhuten Yeole**: Data gathering for global summary and policy response, visualising global summary and policy response, implementation of “Global Summary” and “Public Health Response” in the dashboard, compiling other sections into the dashboard, and deploying dashboard through shinyapps.io
+- **Vinh Quang Hoang**: Data gathering, visualisation and forecasting for Testing, implementation of “Testing” in the dashboard with Jielin.
+- **Xingwei Zhou**: Data visualization for vaccination world map and implement it on the shiny vaccination tab.
+
+# References 
+
+- Blavatnik School of Government (2021) OxCRGT_latest.csv [csv file] Retrieved from https://github.com/OxCGRT/covid-policy-tracker/blob/master/data/OxCGRT_latest.csv
+-  International Labour Organisation. (2021). COVID-19 and the World of Work (7th Edition).  [online] Available at: 
+<https://www.ilo.org/wcmsp5/groups/public/@dgreports/@dcomm/documents/briefingnote/wcms_767028.pdf>[Accessed 4 June 2021].
+- Our World in Data (2021).  Continents-according-to-our-world-in-data.csv [csv file]. Retrieved from https://ourworldindata.org/grapher/continents-according-to-our-world-in-data
+- Our World In Data (2021). country_vaccinations.csv [csv file]. Retrieved from https://www.kaggle.com/gpreda/covid-world-vaccination-progress
+- Our World in Data (2021). covid-19-testing-policy.csv[csv file]. Retrieved from
+https://ourworldindata.org/grapher/covid-19-testing-policy
+- Our World in Data (2021). locations.csv [csv file]. Retrieved from https://github.com/owid/covid-19-data/blob/master/public/data/vaccinations/locations.csv
+- Our World in Data (2021). owid-covid-data.csv[csv file]. Retrieved from
+https://github.com/owid/covid-19-data/blob/master/public/data/owid-covid-data.csv
+- Our World in Data (2021). vaccinations.csv [csv file]. Retrieved from https://github.com/owid/covid-19-data/blob/master/public/data/vaccinations/vaccinations.csv
+- World Health Organisation (2020) WHO-COVID-10-global-data.csv[csv file]. Retrieved from https://covid19.who.int/WHO-COVID-19-global-data.csv
+
+# Appendix
+## Packages used 
+```{r}
+library(shinyWidgets)
+library(tidyverse)
+library(readxl)
+library(tibble)
+library(janitor)
+library(reshape2)
+library(pheatmap)
+library(maps)
+library(zoo)
+library(dendextend)
+library(proxy)
+library(DT)
+library(lubridate)
+library(forecast)
+library(readr)
+library(fpp2)
+library(TTR)
+library(tseries)
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(kableExtra)
+library(ggthemes)
+library(plotly)
+library(sparkline)
+library(rsconnect)
+library(shinythemes)
+library(waffle)
+sessionInfo()
+
+```
+
+## Shiny code
+```{r eval=FALSE}
+#-------------------------------------ui.R--------------------------------
+library(shinyWidgets)
+library(shiny)
+library(plotly)
+library(shinythemes)
+library(DT)
+library(rsconnect)
+#test comment
+ui <- navbarPage(
+  "HEALTH_R10: Health Systems",
+  theme = shinytheme("united"),
+  tabPanel(
+    "Main",
+    # App title ----
+    titlePanel(div(
+      windowTitle = "Health Systems",
+      img(src = "banner.jpg", width = "100%", class = "bg")
+    )),
+    
+    tags$br(),
+    
+    ##########################################
+    ####  Panel: Home            ####
+    ##########################################
+    
+    tabsetPanel(
+      type = "tabs",
+      tabPanel(
+        "Global Summary",
+        sidebarLayout(
+          sidebarPanel(
+            conditionalPanel(condition="input.tabselected==1",
+                             h3("Choose graph:"),
+                             tags$br(),
+                             radioGroupButtons("radio", "Choose graph to view:",
+                                               choices = list("CASES", "DEATHS"), justified = T),
+                             awesomeCheckbox("facet", "Faceted", value = F)),
+            conditionalPanel(condition="input.tabselected==2",
+                             h3("Options"))
+          ),
+          mainPanel(
+            tabsetPanel(
+              type = "tabs",
+              tabPanel("Global Epidemic Curve", value=1,
+                       plotlyOutput("global_plot")),
+              tabPanel("Cases and Deaths", value=2,
+                       DTOutput("dt_table")),
+              id="tabselected"
+            ),
+            tags$br(),
+            tags$br()
+          )
+        ),
+        tags$hr()
+      ),
+      
+      ################################################
+      #### Panel: Public Health Responses         ####
+      ################################################
+      
+      tabPanel(
+        "Public Health Response",
+        
+        sidebarLayout(
+          sidebarPanel(
+            conditionalPanel(condition="input.public==1",
+                             h3("Policy Response:"),
+                             tags$br(),
+                             pickerInput(
+                               "policy",
+                               "Select policy:",
+                               choices=c("Containment and health index", "School closure", 
+                                         "Workplace closure", "Cancel public events",
+                                         "Restrictions on gatherings", "Close public transport",
+                                         "Stay at home requirements", "Restrictions on internal
+                        movement", "International travel controls",
+                                         "Public information campaigns", "Contact tracing",
+                                         "Facial coverings", "Vaccination policy", "Protection of elderly people")
+                             ),
+                             dateInput("Date", "Select date:",
+                                       value = "2020-10-01",
+                                       max = "2021-05-28")),
+            conditionalPanel(condition="input.public==2",
+                             h3("Choose country:"),
+                             tags$br(),
+                             pickerInput(
+                               "country",
+                               "Select country:",
+                               choices = unique(policy$CountryName)
+                             ),
+                             dateInput("table_date", "Show table as of:",
+                                       value = "2021-01-01",
+                                       max = "2021-05-28"),
+                             tags$br(),
+                             h5("All indicators are recorded on an ordinal scale that represents the 
+                                strictness of the policy."),
+                             h5("For more information, click here:"),
+                             tags$a(href="https://github.com/OxCGRT/covid-policy-tracker/blob/master/documentation/codebook.md", "Oxford COVID-19 Government Response Tracker", target="_blank"))
+          ),
+          
+          mainPanel(
+            tabsetPanel(
+              type = "tabs",
+              tabPanel("World Map", value=1,
+                       plotlyOutput("world_plot")),
+              tabPanel("By Country", value=2,
+                       DTOutput("dt_country")),
+              id="public"
+            ),
+            tags$br(),
+            tags$br()
+          )
+        ),
+        
+        tags$hr()
+      ),
+      
+      ################################################
+      #### Panel: Testing                         ####
+      ################################################
+      
+      tabPanel(
+        "Testing",
+        
+        sidebarLayout(
+          sidebarPanel(
+            conditionalPanel(condition="input.test==1",
+                             h3("Choose date:"),
+                             tags$br(),
+                             dateInput("test_date", "Select date:",
+                                       value = "2020-05-05", datesdisabled = c("2020-01-01", "2022-01-01"))),
+            conditionalPanel(condition="input.test==2",
+                             h3("Choose countries:"),
+                             tags$br(),
+                             pickerInput(
+                               "test_countries",
+                               "Select countries/regions:",
+                               choices = unique(testing2$location),
+                               multiple=TRUE,
+                               selected="Australia"
+                             ),
+                             radioGroupButtons("test_one", "Measure:",
+                                               choices = list("Total tests", "Daily tests"), justified=T)),
+            conditionalPanel(condition="input.test==3",
+                             h3("Choose country to forecast:"),
+                             tags$br(),
+                             pickerInput("test_forecast","Select country/region:",
+                                         choices=unique(testing2$location),
+                                         multiple=FALSE,
+                                         selected="Australia"),
+                             radioGroupButtons("test_two", "Measure:",
+                                               choices = list("Total tests", "Daily tests"), justified=T))),
+          
+          
+          
+          mainPanel(
+            tabsetPanel(
+              type = "tabs",
+              tabPanel("COVID-19 Testing Policy", value=1,
+                       plotlyOutput("policies")),
+              tabPanel("COVID-19 Testing Trend", value=2,
+                       plotlyOutput("new_tests_plot")),
+              tabPanel("Forecasting", value=3,
+                       plotOutput("forcast_test_plot")),
+              ## Jielin change here
+              id="test"
+            ),
+            tags$br(),
+            tags$br()
+          )
+        ),
+        
+        tags$hr()
+      ),
+      
+      
+      ################################################
+      #### Panel: Vaccinations                    ####
+      ################################################
+      
+      tabPanel(
+        "Vaccination",
+        
+        sidebarLayout(
+          sidebarPanel(
+            conditionalPanel(condition="input.vaccine==1",
+                             h3("Choose date:"),
+                             tags$br(),
+                             dateInput("date", "Select date:",
+                                       value = "2021-03-31")),
+            conditionalPanel(condition="input.vaccine==2",
+                             h3("Choose countries:"),
+                             tags$br(),
+                             pickerInput(
+                               "vaccine_countries",
+                               "Select countries/regions:",
+                               choices = unique(vaccine$location),
+                               multiple=TRUE,
+                               selected="Australia"
+                             ),
+                             radioGroupButtons("vaccine_type", "Measure:",
+                                               choices = list("Total vaccinations", "Daily vaccinations"), justified=T)),
+            conditionalPanel(condition="input.vaccine==3",
+                             h3("Vaccine Programs"),
+                             tags$br(),
+                             h5("The interactive world map shows the vaccination programs adopted by each country.
+                                Hover over a country on the map to see which vaccine program they use."),
+                             tags$br(),
+                             h5("The waffle chart shows the distribution of the top 10 vaccination programs adopted
+                                by countries around the world. The chart shows the ratios of each vaccine program.")),
+            conditionalPanel(condition="input.vaccine==4",
+                             h3("Choose WHO Region:"),
+                             tags$br(),
+                             pickerInput(
+                               "region",
+                               "Select WHO Region:",
+                               choices = c("African Region", "Region of the Americas", "Eastern Mediterranean Region",
+                                           "European Region", "South-East Asia Region", "Western Pacific Region"),
+                               selected = "African Region",
+                               multiple = F
+                             ),
+                             radioGroupButtons("plot_type", "Measure:",
+                                               choices = list("Total vaccinations", "People vaccinated",
+                                                              "People fully vaccinated"), direction="vertical",
+                                               justified=T))),
+          
+            
+          
+          mainPanel(
+            tabsetPanel(
+              type = "tabs",
+              tabPanel("World Map", value=1,
+                       plotlyOutput("world_v")),
+              tabPanel("Vaccination Trends", value=2,
+                       plotlyOutput("trend_plot")),
+              tabPanel("Vaccine Programs Adopted", value=3,
+                       plotlyOutput("vac_program"),
+                       tags$br(),
+                       plotOutput("waffle")),
+              tabPanel("By Region", value=4,
+                       plotlyOutput("WHO_vaccine")),
+              id="vaccine"
+            ),
+            tags$br(),
+            tags$br()
+          )
+        ),
+        
+        tags$hr()
+      ),
+      
+      
+      
+      ################################################
+      #### Panel: Summary                         ####
+      ################################################
+      
+      tabPanel(
+        "Summary",
+        
+        sidebarLayout(
+          sidebarPanel(
+            conditionalPanel(condition="input.summary==1 || input.summary==2 || input.summary==3 || input.summary==4",
+                             h3("Choose countries/regions:"),
+                             tags$br(),
+                             pickerInput("countries_one",
+                                         "Select countries/regions:",
+                                         choices = unique(countries),
+                                         multiple=T,
+                                         selected="Australia",
+                                         options = list(maxItems=20)),
+                             awesomeCheckbox("smooth_one", "Smooth", F)),
+            
+            conditionalPanel(condition="input.summary==5",
+                             h3("Choose countries/regions:"),
+                             tags$br(),
+                             pickerInput("countries_two",
+                                         "Select countries/regions:",
+                                         choices = unique(countries),
+                                         multiple=T,
+                                         selected="Australia",
+                                         options = list(maxItems=20)),
+                             numericInput("k", "K:", 4, min = 1, max = 6),
+                             selectInput("D", "Diagram:",choices = list("Scores in clusters"=1,"World Map"= 2 ), selected = 1))),
+          
+          
+          
+          mainPanel(
+            tabsetPanel(
+              type = "tabs",
+              tabPanel("Testing Score", value=1,
+                       plotlyOutput("testing_score")),
+              tabPanel("Vaccination Score", value=2,
+                       plotlyOutput("vaccination_score")),
+              tabPanel("Policy Score", value=3,
+                       plotlyOutput("policy_score")),
+              tabPanel("Overall Performance", value=4,
+                       plotlyOutput("total_score")),
+              tabPanel("Performance Table", value=6,
+                       DTOutput("dt")),
+              tabPanel("Overall Performance in Clusters", value=5,
+                       plotlyOutput("total_score_clustered"),
+                       tags$br(),
+                       plotOutput("cluster")),
+              id="summary"
+            ),
+            tags$br(),
+            tags$br()
+          )
+        ),
+        
+        tags$hr()
+      ))),
+  
+
+  ################################################
+  #### Panel: Documentation                   ####
+  ################################################
+  
+  tabPanel("Documentation",
+           fluidPage(htmlOutput("doc"))),
+  
+  ################################################
+  #### Panel: About                           ####
+  ################################################
+  tabPanel("About",
+           fluidPage(htmlOutput("abo")))
+ 
+
+  
+  # Changes colour of header navbar
+  #tags$head(
+   # tags$style(type = 'text/css', 
+    #           HTML('.navbar { background-color: #fb6c2e;}
+     #                     .navbar-default .navbar-brand{color: white;}
+      #                    .tab-panel{ background-color: orange; color: white}
+       #                   .navbar-default .navbar-nav > .active > a, 
+        #                   .navbar-default .navbar-nav > .active > a:focus, 
+         #                  .navbar-default .navbar-nav > .active > a:hover {
+          #                      color: white;
+           #                     background-color: orange;
+            #                }')
+    #)),
+  
+  # Change colour of back ground
+  #setBackgroundColor(
+    #color = c("#F1F1F1", "#EA6A47"),
+   # color = "white",
+    #gradient = "linear",
+    #direction = "bottom"
+    
+  #)
+)
+
+#-----------------server.R----------------------------
+##########################################
+####   Main Libraries                 ####
+##########################################
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(DT)
+library(knitr)
+library(kableExtra)
+library(ggthemes)
+library(plotly)
+library(sparkline)
+library(rsconnect)
+library(shinythemes)
+library(waffle)
+
+##########################################
+####   Attaching datasets             ####
+##########################################
+
+
+
+
+##########################################
+####   Shiny server                   ####
+##########################################
+
+server <- function(session, input, output) {
+  
+  ################################################
+  #### Panel: Global Summary                  ####
+  ################################################
+  
+  output$global_plot <- renderPlotly({
+    #If user wants a faceted graph
+    if(input$facet){
+      
+      #If user wants to view new cases graph
+      if(input$radio=="CASES"){
+        g3 <- ggplot(final, aes(x=Date, y=New_cases, fill=WHO_region)) +
+          geom_bar(stat="identity", width=0.5) + facet_wrap(~WHO_region, scales="free_y") + theme_minimal() + theme(legend.title=element_blank()) +
+          xlab("Date reported") + ylab("New cases") + labs(color = "WHO Region") + ggtitle("Number of new cases by region")
+        ggplotly(g3)
+      }
+      
+      #If user wants to view new deaths graph
+      else{
+        g4 <- ggplot(final, aes(x=Date, y=New_deaths, fill=WHO_region)) +
+          geom_bar(stat="identity", width=0.5) + facet_wrap(~WHO_region, scales="free_y") + theme_minimal() + theme(legend.title=element_blank()) +
+          xlab("Date reported") + ylab("New deaths") + labs(color = "WHO Region") + ggtitle("Number of new cases by region")
+        ggplotly(g4)
+      }
+    }
+    else{
+      
+      #If user wants to view new cases graph
+      if(input$radio=="CASES"){
+        g1 <- ggplot(final, aes(x=Date, y=New_cases, fill=WHO_region, color=WHO_region)) +
+          geom_bar(stat="identity", width=0.5) + theme_minimal() + theme(legend.title=element_blank()) +
+          xlab("Date reported") + ylab("New cases") + labs(color = "WHO Region") + ggtitle("Number of new cases by region")
+        ggplotly(g1, tooltip = c("x", "y", "fill"))
+      }
+      
+      #If user wants to view new deaths graph
+      else{
+        g2 <- ggplot(final, aes(x=Date, y=New_deaths, fill=WHO_region, color=WHO_region)) +
+          geom_bar(stat="identity", width=0.5) + theme_minimal() + theme(legend.title=element_blank()) +
+          xlab("Date reported") + ylab("New deaths") + labs(color = "WHO Region") + ggtitle("Number of new deaths by region")
+        ggplotly(g2, tooltip = c("x", "y", "fill"))
+      }
+    }
+  })
+  
+  output$dt_table <- renderDT({
+    datatable(covid_final, colnames=c("Country", "Trend", "New Cases", "Total Cases", "New Deaths", "Total Deaths"), rownames = F,
+              escape = F, options = list(order=list(list(2, "desc")), pageLength=25, fnDrawCallback = htmlwidgets::JS(
+                '
+            function(){
+            HTMLWidgets.staticRender();
+            }
+            '))) %>%
+      spk_add_deps()
+  })
+  
+  ################################################
+  #### Panel: Policy Response                 ####
+  ################################################
+  
+  output$world_plot <- renderPlotly({
+    #Filter data to select relevant rows
+    date <- input$Date
+    policy_tab <- subset(policy, Date==date)
+    
+    #If specific policy is selected
+    if(input$policy=="School closure"){
+      #Select only countries
+      policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+      
+      #Plot World Map
+      title = "School closures during COVID-19 pandemic on"
+      title = paste(title, date)
+      new_world_map <- merge(world_map, policy_tab, 
+                             by.x = "region", by.y = "CountryName",
+                             all.x = TRUE)
+      new_world_map <- new_world_map[order(new_world_map$order), ]
+      
+      school_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=C1_School.closing, region=region)) + 
+        geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) +
+        theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+              legend.title = element_blank())
+      ggplotly(school_plot, tooltip=c("region", "fill"))
+    }
+    else{
+      #If specific policy is selected
+      if(input$policy=="Workplace closure"){
+        policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+        
+        #Plot World Map
+        title = "Workplace closures during COVID-19 pandemic on"
+        title = paste(title, date)
+        new_world_map <- merge(world_map, policy_tab, 
+                               by.x = "region", by.y = "CountryName",
+                               all.x = TRUE)
+        new_world_map <- new_world_map[order(new_world_map$order), ]
+        
+        work_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=C2_Workplace.closing, region=region)) + 
+          geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+          theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                legend.title = element_blank())
+        ggplotly(work_plot, tooltip=c("region", "fill"))
+      }
+      else{
+        #If specific policy is selected
+        if(input$policy=="Cancel public events"){
+          policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+          
+          #Plot World Map
+          title = "Cancellation of public events during COVID-19 pandemic on"
+          title = paste(title, date)
+          new_world_map <- merge(world_map, policy_tab, 
+                                 by.x = "region", by.y = "CountryName",
+                                 all.x = TRUE)
+          new_world_map <- new_world_map[order(new_world_map$order), ]
+          
+          public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=C3_Cancel.public.events, region=region)) + 
+            geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+            theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                  legend.title = element_blank())
+          ggplotly(public_plot, tooltip=c("region", "fill"))
+        }
+        else{
+          #If specific policy is selected
+          if(input$policy=="Restrictions on gatherings"){
+            policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+            
+            #Plot World Map
+            title = "Restrictions on gatherings during COVID-19 pandemic on"
+            title = paste(title, date)
+            new_world_map <- merge(world_map, policy_tab, 
+                                   by.x = "region", by.y = "CountryName",
+                                   all.x = TRUE)
+            new_world_map <- new_world_map[order(new_world_map$order), ]
+            
+            public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=C4_Restrictions.on.gatherings, region=region)) + 
+              geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+              theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                    legend.title = element_blank())
+            ggplotly(public_plot, tooltip=c("region", "fill"))
+          }
+          else{
+            #If specific policy is selected
+            if(input$policy=="Close public transport"){
+              policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+              
+              #Plot World Map
+              title = "Closure of public transport during COVID-19 pandemic on"
+              title = paste(title, date)
+              new_world_map <- merge(world_map, policy_tab, 
+                                     by.x = "region", by.y = "CountryName",
+                                     all.x = TRUE)
+              new_world_map <- new_world_map[order(new_world_map$order), ]
+              
+              public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=C5_Close.public.transport, region=region)) + 
+                geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+                theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                      legend.title = element_blank())
+              ggplotly(public_plot, tooltip=c("region", "fill"))
+            }
+            else{
+              #If specific policy is selected
+              if(input$policy=="Stay at home requirements"){
+                policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+                
+                #Plot World Map
+                title = "Stay-at-home requirements during COVID-19 pandemic on"
+                title = paste(title, date)
+                new_world_map <- merge(world_map, policy_tab, 
+                                       by.x = "region", by.y = "CountryName",
+                                       all.x = TRUE)
+                new_world_map <- new_world_map[order(new_world_map$order), ]
+                
+                public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=C6_Stay.at.home.requirements, region=region)) + 
+                  geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+                  theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                        legend.title = element_blank())
+                ggplotly(public_plot, tooltip=c("region", "fill"))
+              }
+              else{
+                #If specific policy is selected
+                if(input$policy=="Restrictions on internal movement"){
+                  policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+                  
+                  #Plot World Map
+                  title = "Restrictions on interval movement during COVID-19 pandemic on"
+                  title = paste(title, date)
+                  new_world_map <- merge(world_map, policy_tab, 
+                                         by.x = "region", by.y = "CountryName",
+                                         all.x = TRUE)
+                  new_world_map <- new_world_map[order(new_world_map$order), ]
+                  
+                  public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=C7_Restrictions.on.interval.movement, region=region)) + 
+                    geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+                    theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                          legend.title = element_blank())
+                  ggplotly(public_plot, tooltip=c("region", "fill"))
+                }
+                else{
+                  #If specific policy is selected
+                  if(input$policy=="International travel controls"){
+                    policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+                    
+                    #Plot World Map
+                    title = "International travel controls during COVID-19 pandemic on"
+                    title = paste(title, date)
+                    new_world_map <- merge(world_map, policy_tab, 
+                                           by.x = "region", by.y = "CountryName",
+                                           all.x = TRUE)
+                    new_world_map <- new_world_map[order(new_world_map$order), ]
+                    
+                    public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=C8_International.travel.controls, region=region)) + 
+                      geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+                      theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                            legend.title = element_blank())
+                    ggplotly(public_plot, tooltip=c("region", "fill"))
+                  }
+                  else{
+                    #If specific policy is selected
+                    if(input$policy=="Public information campaigns"){
+                      policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+                      
+                      #Plot World Map
+                      title = "Public information campaigns on the COVID-19 pandemic on"
+                      title = paste(title, date)
+                      new_world_map <- merge(world_map, policy_tab, 
+                                             by.x = "region", by.y = "CountryName",
+                                             all.x = TRUE)
+                      new_world_map <- new_world_map[order(new_world_map$order), ]
+                      
+                      public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=H1_Public.information.campaigns, region=region)) + 
+                        geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+                        theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                              legend.title = element_blank())
+                      ggplotly(public_plot, tooltip=c("region", "fill"))
+                    }
+                    else{
+                      #If specific policy is selected
+                      if(input$policy=="Contact tracing"){
+                        policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+                        
+                        #Plot World Map
+                        title = "Contract tracing during COVID-19 pandemic on"
+                        title = paste(title, date)
+                        new_world_map <- merge(world_map, policy_tab, 
+                                               by.x = "region", by.y = "CountryName",
+                                               all.x = TRUE)
+                        new_world_map <- new_world_map[order(new_world_map$order), ]
+                        
+                        public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=H3_Contact.tracing, region=region)) + 
+                          geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+                          theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                                legend.title = element_blank())
+                        ggplotly(public_plot, tooltip=c("region", "fill"))
+                      }
+                      else{
+                        #If specific policy is selected
+                        if(input$policy=="Facial coverings"){
+                          policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+                          
+                          #Plot World Map
+                          title = "Face covering policies during COVID-19 pandemic on"
+                          title = paste(title, date)
+                          new_world_map <- merge(world_map, policy_tab, 
+                                                 by.x = "region", by.y = "CountryName",
+                                                 all.x = TRUE)
+                          new_world_map <- new_world_map[order(new_world_map$order), ]
+                          
+                          public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=H6_Facial.Coverings, region=region)) + 
+                            geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+                            theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                                  legend.title = element_blank())
+                          ggplotly(public_plot, tooltip=c("region", "fill"))
+                        }
+                        else{
+                          #If specific policy is selected
+                          if(input$policy=="Vaccination policy"){
+                            policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+                            
+                            #Plot World Map
+                            title = "Vaccination policies during COVID-19 pandemic on"
+                            title = paste(title, date)
+                            new_world_map <- merge(world_map, policy_tab, 
+                                                   by.x = "region", by.y = "CountryName",
+                                                   all.x = TRUE)
+                            new_world_map <- new_world_map[order(new_world_map$order), ]
+                            
+                            public_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=H7_Vaccination.policy, region=region)) + 
+                              geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+                              theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                                    legend.title = element_blank())
+                            ggplotly(public_plot, tooltip=c("region", "fill"))
+                          }
+                          else{
+                            #If specific policy is selected
+                            if(input$policy=="Protection of elderly people"){
+                              policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+                              
+                              #Plot World Map
+                              title = "Policies for protection of elderly people during COVID-19 pandemic on"
+                              title = paste(title, date)
+                              new_world_map <- merge(world_map, policy_tab, 
+                                                     by.x = "region", by.y = "CountryName",
+                                                     all.x = TRUE)
+                              new_world_map <- new_world_map[order(new_world_map$order), ]
+                              
+                              elderly_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=H8_Protection.of.elderly.people, region=region)) + 
+                                geom_polygon() + theme_void() + xlab("") + ylab("") + ggtitle(title) + 
+                                theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                                      legend.title = element_blank())
+                              ggplotly(elderly_plot, tooltip=c("region", "fill"))
+                            }
+                            else{
+                              #If specific policy is selected
+                              if(input$policy=="Containment and health index"){
+                                policy_tab <- policy_tab[policy_tab$Jurisdiction != "STATE_TOTAL",]
+                                
+                                #Plot World Map
+                                title = "COVID-19: Containment and Health Index on"
+                                title = paste(title, date)
+                                new_world_map <- merge(world_map, policy_tab, 
+                                                       by.x = "region", by.y = "CountryName",
+                                                       all.x = TRUE)
+                                new_world_map <- new_world_map[order(new_world_map$order), ]
+                                breaks <- c(0, 20, 40, 60, 80, 100)
+                                new_world_map$ContainmentHealthIndexForDisplay[is.na(new_world_map$ContainmentHealthIndexForDisplay)] <- 0
+                                new_world_map$index_category <- 
+                                  cut(as.numeric(new_world_map$ContainmentHealthIndexForDisplay),
+                                      breaks,include.lowest = TRUE, right = FALSE, dig.lab=10)
+                                
+                                reds_col <- RColorBrewer::brewer.pal(length(breaks) - 1, "Greens")
+                                names(reds_col) <- levels(new_world_map$index_category)
+                                
+                                index_plot <- ggplot(new_world_map, aes(x=long, y=lat, group=group, fill=index_category, text=paste(region, ContainmentHealthIndexForDisplay))) + 
+                                  geom_polygon() + theme_void() + xlab("") + ylab("") +scale_fill_manual(values = reds_col) + ggtitle(title) +
+                                  theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+                                        legend.title = element_blank())
+                                ggplotly(index_plot, tooltip="text")
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  
+  output$dt_country <- renderDT({
+    #Filter data to select user-specified country
+    policy_tab <- subset(policy, CountryName==input$country)
+    
+    #Filter data to contain data before user-specified date
+    policy_final <- subset(policy_tab, Date<=input$table_date)
+    
+    #Gathering latest policy response data
+    latest.index <- tail(policy_final, 1)
+    current_index <- c(round(latest.index$ContainmentHealthIndex,0),
+                       latest.index$C1_School.closing, latest.index$C2_Workplace.closing,
+                       latest.index$C3_Cancel.public.events,
+                       latest.index$C4_Restrictions.on.gatherings, latest.index$C5_Close.public.transport,
+                       latest.index$C6_Stay.at.home.requirements,
+                       latest.index$C7_Restrictions.on.internal.movement, latest.index$C8_International.travel.controls,
+                       latest.index$H1_Public.information.campaigns, latest.index$H2_Testing.policy,
+                       latest.index$H3_Contact.tracing, latest.index$H6_Facial.Coverings,
+                       latest.index$H7_Vaccination.policy, latest.index$H8_Protection.of.elderly.people)
+    
+    #Gathering highest policy response data
+    max_index <- c(round(max(policy_final$ContainmentHealthIndex, na.rm=T),0),
+                   max(policy_final$C1_School.closing, na.rm=T), max(policy_final$C2_Workplace.closing, na.rm=T), 
+                   max(policy_final$C3_Cancel.public.events, na.rm=T), max(policy_final$C4_Restrictions.on.gatherings, na.rm=T), 
+                   max(policy_final$C5_Close.public.transport, na.rm=T), max(policy_final$C6_Stay.at.home.requirements, na.rm=T), 
+                   max(policy_final$C7_Restrictions.on.internal.movement, na.rm=T), max(policy_final$C8_International.travel.controls, na.rm=T), 
+                   max(policy_final$H1_Public.information.campaigns, na.rm=T), max(policy_final$H2_Testing.policy, na.rm=T), 
+                   max(policy_final$H3_Contact.tracing, na.rm=T), max(policy_final$H6_Facial.Coverings, na.rm=T), 
+                   max(policy_final$H7_Vaccination.policy, na.rm=T), max(policy_final$H8_Protection.of.elderly.people, na.rm=T))
+    Policy <- c("Containment and Health Index", "School closures", "Workplace closures", "Cancel public events", 
+                "Restrictions on gatherings", "Public transport closures", "Stay at home requirements", 
+                "Restrictions on internal movement", "International travel controls", "Public information campaigns", 
+                "Testing Policy", "Contact tracing", "Facial coverings", "Vaccination policy", "Protection of elderly people")
+    
+    #Creating DataTable
+    df <- data.frame(Policy, current_index, max_index)
+    datatable(df, colnames=c("Country/Region", "Current Response", "Highest Response"), options=list(pageLength=25))
+  })
+  
+  ################################################
+  #### Panel: Testing                   ####
+  ################################################
+  
+  output$policies <- renderPlotly({
+    #Filtering data by date
+    date = input$test_date
+    tests = tests%>%filter(Day==date)
+    options(scipen=999)
+    
+    #Plot World Map
+    world_map_with_data <- merge(world_map, tests,
+                                 by.x = "region", by.y = "Entity",
+                                 all.x = TRUE)
+    world_map_with_data <- world_map_with_data[order(world_map_with_data$order), ]
+    title = "COVID-19 Testing Policies during"
+    title = paste(title, date)
+    
+    worldmap2 = ggplot(data=world_map_with_data, aes(x=long, y=lat, group=group, fill=testing_policy, 
+                                                     region=region, testing_policy=testing_policy)) + 
+      geom_polygon() + theme_void() + theme(panel.grid = element_blank(),legend.title = element_blank()) +
+      ggtitle(title) + 
+      labs(fill="testing_policy")
+    plotly::ggplotly(worldmap2, tooltip=c("region", "testing_policy"))
+  })
+  
+  output$new_tests_plot <- renderPlotly({
+    #Filtering data to contain user-specified countries
+    countries = input$test_countries
+    testing2$date <- as.Date(testing2$date)
+    test_country <- testing2%>%filter(testing2$location%in% input$test_countries)
+    
+    #If user wants to view total tests
+    if(input$test_one=="Total tests"){
+      
+      #Plot line graph
+      g <- ggplot(test_country, aes(x = date, y = total_tests, 
+                                    group = location, color = location)) +
+        geom_line(lwd = 1) +
+        theme_bw() +
+        scale_color_tableau(palette = "Tableau 20") +
+        ylab("Number of Total Tests") +
+        labs(title = "Total COVID-19 tests", color = "Country/Region")
+      ggplotly(g)
+    }
+    
+    #If user wants to view daily tests
+    else{
+      
+      #Plot line graph
+      g <- ggplot(test_country, aes(x = date, y = new_tests_smoothed, 
+                                    group = location, color = location)) +
+        geom_line(lwd = 1) +
+        theme_bw() +
+        scale_color_tableau(palette = "Tableau 20") +
+        ylab("Number of Daily Tests") +
+        labs(title = "Daily COVID-19 tests", color = "Country/Region")
+      ggplotly(g)
+    }
+  })
+  
+  output$forcast_test_plot <- renderPlot({
+    #Filter data for user-specified country
+    country = input$test_forecast
+    oz_data <- testing2 %>% 
+      dplyr::filter(location == country)
+    #oz_data = oz_data%>%select(-location)
+    inds <- seq(as.Date("2020-03-29"), as.Date("2021-08-30"), by = "days")
+    
+    #If user wants to view total tests forecast
+    if(input$test_two=="Total tests"){
+      #data_ts= ts(oz_data$total_tests,start = c(2020,3), end = c(2021,5), frequency = 365)
+      data_ts= ts(oz_data$total_tests,start = c(2020, as.numeric(format(inds[1], "%j"))), frequency = 365)
+      fit_A <- auto.arima(data_ts)
+      plot(forecast(fit_A, 15))
+      
+    }
+    
+    #If user wants to view daily tests forecast
+    else{
+      #data_ts= ts(oz_data$new_tests_smoothed,start = c(2020,3), end = c(2021,5), frequency = 365)
+      data_ts= ts(oz_data$new_tests_smoothed,c(2020, as.numeric(format(inds[1], "%j"))), frequency = 365)
+      fit_A <- auto.arima(data_ts)
+      plot(forecast(fit_A, 15))
+    }
+  })
+  
+  ################################################
+  #### Panel: Vaccinations                   ####
+  ################################################
+  
+  #######################
+  # World Map Sub-tab  #
+  ######################
+  
+  output$world_v <- renderPlotly({
+    V_date = input$date
+    # Filter Data
+    vaccine_day <- vaccine %>% filter(date == V_date)
+    # Merge World Map data with desired data to be mapped
+    world_map_with_data <- merge(world_map, vaccine_day, 
+                                 by.x = "region", by.y = "location",
+                                 all.x = TRUE)
+    # Order Data
+    world_map_with_data <- world_map_with_data[order(world_map_with_data$order), ]
+    breaks <- c(0, 2*10^c(2:9))
+    max(vaccine$total_vaccinations, na.rm=TRUE) < max(breaks)
+    # Remove Missing Values
+    world_map_with_data$total_vaccinations[is.na(world_map_with_data$total_vaccinations)] <- 0
+    world_map_with_data$daily_vaccinations[is.na(world_map_with_data$daily_vaccinations)] <- 0
+    world_map_with_data$total_vaccinations_category <-
+      cut(as.numeric(world_map_with_data$total_vaccinations),
+          breaks, include.lowest = TRUE, right = FALSE, dig.lab=10)
+    # Colour world map orange
+    green_col <- RColorBrewer::brewer.pal(length(breaks) - 1, "Oranges")
+    names(green_col) <- levels(world_map_with_data$total_vaccinations_category)
+    title <- "Total number of COVID-19 vaccinations on"
+    title = paste(title, V_date)
+    # Plot World Map
+    word1 <- ggplot(world_map_with_data, 
+                    aes(x = long, y = lat, group = group, fill = total_vaccinations_category, lab=region, total_vaccinations=total_vaccinations, people_vaccinated=people_vaccinated, daily_vaccinations=daily_vaccinations)) +
+      geom_polygon() +
+      scale_fill_manual(values= green_col) +
+      xlab("") + ylab("") +  ggtitle(title) +
+      theme_void() +
+      theme(legend.position = "bottom", panel.grid = element_blank(),
+            legend.title = element_blank())
+    plotly::ggplotly(word1, tooltip=c("total_vaccinations","region","daily_vaccinations"))
+  })
+  
+  
+  ################################
+  # Vaccination Trends Sub-tab  #
+  ###############################
+  
+  
+  output$trend_plot <- renderPlotly({
+    # Selecting Total Vaccinations Graph as default
+    if(input$vaccine_type == "Total vaccinations"){
+      vaccine$date <- as.Date(vaccine$date)
+      countries <- input$vaccine_countries
+      test_vaccine <- vaccine %>%
+        filter(vaccine$location %in% countries) %>%
+        filter(!is.na(total_vaccinations))
+      
+      # Creating Line Graph
+      ggplot(test_vaccine, aes(x = date, y = total_vaccinations, 
+                               group = location, color = location)) +
+        geom_line(lwd = 1) +
+        theme_bw() +
+        scale_color_tableau(palette = "Tableau 20") +
+        ylab("Total vaccinations") +
+        labs(title = "Total COVID-19 Vaccinations", color = "Country/Region")
+    }
+    else{
+      # Selecting Daily Vaccinations Graph
+      vaccine$date <- as.Date(vaccine$date)
+      countries <- input$vaccine_countries
+      test_vaccine <- vaccine %>%
+        filter(vaccine$location %in% countries) %>%
+        filter(!is.na(total_vaccinations))
+      
+      # Creating Line Graph
+      ggplot(test_vaccine, aes(x = date, y = daily_vaccinations, 
+                               group = location, color = location)) +
+        geom_line(lwd = 1) +
+        theme_bw() +
+        scale_color_tableau(palette = "Tableau 20") +
+        ylab("Daily vaccinations") +
+        labs(title = "Daily COVID-19 Vaccinations", color = "Country/Region")
+    }
+  })
+  
+  #########################################
+  # Vaccination Programs Adopted Sub-tab  #
+  ########################################
+  
+  ################################
+  # Used to create World Map     #
+  ################################
+  
+  output$vac_program <- renderPlotly({
+    # Merge data with World Map Data
+    world_map_with_data <- merge(world_map, df, 
+                                 by.x = "region", by.y = "country",
+                                 all.x = TRUE)
+    
+    # Order data
+    world_map_with_data <- world_map_with_data[order(world_map_with_data$order), ]
+    # Plot World Map
+    world_MaP_vaccine <- ggplot(world_map_with_data, 
+                                aes(x = long, y = lat, group = group, fill = vaccines, label  = region)) +
+      geom_polygon() +
+      xlab("") + ylab("") +  ggtitle("Map of World") +
+      theme_void() +
+      theme(legend.position="none",panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank()) +
+      labs(title = paste('COVID19 Vaccination Programs Around the World'),
+           
+           fill = "")
+    ggplotly(world_MaP_vaccine, tooltip=c("vaccines", "region"))
+  })
+  
+  ################################
+  # Used to create a Waffle Plot #
+  ################################
+  
+  output$waffle <- renderPlot({
+    new_df <- vaccine_names %>% group_by("country",'iso_code','vaccines')
+    
+    data <- as.data.frame(table(new_df$vaccines))
+    data <- data[with(data,order(-Freq)),] 
+    
+    # Order the data by top 10 count
+    top10 <- head(data, 10)
+    whatyouwant <- setNames(top10$Freq, top10$Var1)
+    whatyouwant<-whatyouwant[!is.na(whatyouwant)]
+    
+    # Create Ratio for waffle visualisation
+    waffle(whatyouwant/100, rows=10,  size=0.3) + 
+      scale_fill_manual(values=c("#FF7F0E", "#00B5F7", "#AB63FA","#00CC96","#E9967A","#F08080","#40E0D0",
+                                 "#DFFF00","#DE3163","#6AFF00", "white")) + labs(fill = "Vaccine Programs")
+  })
+  
+  ################################
+  # Used to create a WHO Sub Tab #
+  ################################
+  
+  output$WHO_vaccine <- renderPlotly({
+    
+    # Filter data to select only desired columns
+    covid_new <- subset(covid, Date==max(Date))
+    
+    # Left Join data by variables "location" and "Country"
+    combined_3 <- left_join(grouped_df, covid_new, by=c("location" = "Country"))
+    
+    # Setting Default values
+    if(input$plot_type=="Total vaccinations"){
+      
+      # If specific region is selected
+      if(input$region=="African Region"){
+        region <- combined_3 %>% filter(WHO_region == "AFRO")
+        # Remove NA values
+        region <- region[!is.na(region$total_vaccinations),]
+        
+        # Plot bar graph
+        region_plot <- ggplot(region, aes(x = reorder(location, total_vaccinations), y = total_vaccinations, location=location)) +
+          geom_bar(stat="identity",color='black', fill="steelblue") + ylab("Total vaccinations") +
+          theme(axis.title.y = element_blank(),
+                axis.line.x = element_line(color = "black", size = 1),
+                panel.grid.major.x = element_line(color="grey", size=1),
+                axis.ticks = element_blank(),
+                panel.background = element_blank()) + 
+          coord_flip() 
+        
+        ggplotly(region_plot, tooltip=c("location", "y"))
+      }
+      else{
+        # If specific region is selected
+        if(input$region=="Region of the Americas"){
+          region <- combined_3 %>% filter(WHO_region == "AMRO")
+          region <- region[!is.na(region$total_vaccinations),]
+          
+          # Plot Bar graph
+          region_plot <- ggplot(region, aes(x = reorder(location, total_vaccinations), y = total_vaccinations, location = location)) +
+            geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("Total vaccinations") +
+            theme(axis.title.y = element_blank(),
+                  axis.line.x = element_line(color = "black", size = 1),
+                  panel.grid.major.x = element_line(color="grey", size=1),
+                  panel.background = element_blank()) + 
+            coord_flip() 
+          
+          ggplotly(region_plot, tooltip=c("location", "y"))
+        }
+        else{
+          
+          # If specific region is selected
+          if(input$region=="Eastern Mediterranean Region"){
+            region <- combined_3 %>% filter(WHO_region == "EMRO")
+            region <- region[!is.na(region$total_vaccinations),]
+            
+            # Plot bar Graph
+            region_plot <- ggplot(region, aes(x = reorder(location, total_vaccinations), y = total_vaccinations, location = location)) +
+              geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("Total vaccinations") +
+              theme(axis.title.y = element_blank(),
+                    axis.line.x = element_line(color = "black", size = 1),
+                    panel.grid.major.x = element_line(color="grey", size=1),
+                    panel.background = element_blank()) + 
+              coord_flip() 
+            
+            ggplotly(region_plot, tooltip=c("location", "y"))
+          }
+          else{
+            
+            # If specific region is selected
+            if(input$region=="European Region"){
+              region <- combined_3 %>% filter(WHO_region == "EURO")
+              region <- region[!is.na(region$total_vaccinations),]
+              # Plot bar Graph
+              region_plot <- ggplot(region, aes(x = reorder(location, total_vaccinations), y = total_vaccinations, location = location)) +
+                geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("Total vaccinations") +
+                theme(axis.title.y = element_blank(),
+                      axis.line.x = element_line(color = "black", size = 1),
+                      panel.grid.major.x = element_line(color="grey", size=1),
+                      panel.background = element_blank()) + 
+                coord_flip() 
+              
+              ggplotly(region_plot, tooltip=c("location", "y"))
+            }
+            else{
+              
+              # If specific region is selected
+              if(input$region=="South-East Asia Region"){
+                region <- combined_3 %>% filter(WHO_region == "SEARO")
+                region <- region[!is.na(region$total_vaccinations),]
+                
+                # Plot Bar Graph
+                region_plot <- ggplot(region, aes(x = reorder(location, total_vaccinations), y = total_vaccinations, location = location)) +
+                  geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("Total vaccinations") +
+                  theme(axis.title.y = element_blank(),
+                        axis.line.x = element_line(color = "black", size = 1),
+                        panel.grid.major.x = element_line(color="grey", size=1),
+                        panel.background = element_blank()) + 
+                  coord_flip() 
+                
+                ggplotly(region_plot, tooltip=c("location", "y"))
+              }
+              else{
+                # If specific region is selected
+                if(input$region=="Western Pacific Region"){
+                  region <- combined_3 %>% filter(WHO_region == "WPRO")
+                  region <- region[!is.na(region$total_vaccinations),]
+                  # Plot Bar Graph
+                  region_plot <- ggplot(region, aes(x = reorder(location, total_vaccinations), y = total_vaccinations, location = location)) +
+                    geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("Total vaccinations") +
+                    theme(axis.title.y = element_blank(),
+                          axis.line.x = element_line(color = "black", size = 1),
+                          panel.grid.major.x = element_line(color="grey", size=1),
+                          panel.background = element_blank()) + 
+                    coord_flip() 
+                  
+                  ggplotly(region_plot, tooltip=c("location", "y"))
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    else{
+      # Set Default
+      if(input$plot_type=="People vaccinated"){
+        
+        # If specific region is selected
+        if(input$region=="African Region"){
+          region <- combined_3 %>% filter(WHO_region == "AFRO")
+          region <- region[!is.na(region$people_vaccinated),]
+          
+          # Plot Bar Graph
+          region_plot <- ggplot(region, aes(x = reorder(location, people_vaccinated), y = people_vaccinated, location = location)) +
+            geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People vaccinated") +
+            theme(axis.title.y = element_blank(),
+                  axis.line.x = element_line(color = "black", size = 1),
+                  panel.grid.major.x = element_line(color="grey", size=1),
+                  panel.background = element_blank()) + 
+            coord_flip() 
+          
+          ggplotly(region_plot, tooltip=c("location", "y"))
+        }
+        else{
+          
+          # If specific region is selected
+          if(input$region=="Region of the Americas"){
+            region <- combined_3 %>% filter(WHO_region == "AMRO")
+            region <- region[!is.na(region$people_vaccinated),]
+            
+            # Plot Bar Graph
+            region_plot <- ggplot(region, aes(x = reorder(location, people_vaccinated), y = people_vaccinated, location = location)) +
+              geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People vaccinated") +
+              theme(axis.title.y = element_blank(),
+                    axis.line.x = element_line(color = "black", size = 1),
+                    panel.grid.major.x = element_line(color="grey", size=1),
+                    panel.background = element_blank()) + 
+              coord_flip() 
+            
+            ggplotly(region_plot, tooltip=c("location", "y"))
+          }
+          else{
+            
+            # If specific region is selected
+            if(input$region=="Eastern Mediterranean Region"){
+              region <- combined_3 %>% filter(WHO_region == "EMRO")
+              region <- region[!is.na(region$people_vaccinated),]
+              
+              # Plot Bar Graph
+              region_plot <- ggplot(region, aes(x = reorder(location, people_vaccinated), y = people_vaccinated, location = location)) +
+                geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People vaccinated") +
+                theme(axis.title.y = element_blank(),
+                      axis.line.x = element_line(color = "black", size = 1),
+                      panel.grid.major.x = element_line(color="grey", size=1),
+                      panel.background = element_blank()) + 
+                coord_flip() 
+              
+              ggplotly(region_plot, tooltip=c("location", "y"))
+            }
+            else{
+              
+              # If specific region is selected
+              if(input$region=="European Region"){
+                region <- combined_3 %>% filter(WHO_region == "EURO")
+                region <- region[!is.na(region$people_vaccinated),]
+                
+                # Plot Bar Graph
+                region_plot <- ggplot(region, aes(x = reorder(location, people_vaccinated), y = people_vaccinated, location = location)) +
+                  geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People vaccinated") +
+                  theme(axis.title.y = element_blank(),
+                        axis.line.x = element_line(color = "black", size = 1),
+                        panel.grid.major.x = element_line(color="grey", size=1),
+                        panel.background = element_blank()) + 
+                  coord_flip() 
+                
+                ggplotly(region_plot, tooltip=c("location", "y"))
+              }
+              else{
+                # If specific region is selected
+                if(input$region=="South-East Asia Region"){
+                  region <- combined_3 %>% filter(WHO_region == "SEARO")
+                  region <- region[!is.na(region$people_vaccinated),]
+                  
+                  # Plot Bar Graph
+                  region_plot <- ggplot(region, aes(x = reorder(location, people_vaccinated), y = people_vaccinated, location = location)) +
+                    geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People vaccinated") +
+                    theme(axis.title.y = element_blank(),
+                          axis.line.x = element_line(color = "black", size = 1),
+                          panel.grid.major.x = element_line(color="grey", size=1),
+                          panel.background = element_blank()) + 
+                    coord_flip() 
+                  
+                  ggplotly(region_plot, tooltip=c("location", "y"))
+                }
+                else{
+                  # If specific region is selected
+                  if(input$region=="Western Pacific Region"){
+                    region <- combined_3 %>% filter(WHO_region == "WPRO")
+                    region <- region[!is.na(region$people_vaccinated),]
+                    
+                    # Plot Bar Graph
+                    region_plot <- ggplot(region, aes(x = reorder(location, people_vaccinated), y = people_vaccinated, location = location)) +
+                      geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People vaccinated") +
+                      theme(axis.title.y = element_blank(),
+                            axis.line.x = element_line(color = "black", size = 1),
+                            panel.grid.major.x = element_line(color="grey", size=1),
+                            panel.background = element_blank()) + 
+                      coord_flip() 
+                    
+                    ggplotly(region_plot, tooltip=c("location", "y"))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      else{
+        # If specific region is selected
+        if(input$plot_type=="People fully vaccinated"){
+          if(input$region=="African Region"){
+            region <- combined_3 %>% filter(WHO_region == "AFRO")
+            region <- region[!is.na(region$people_fully_vaccinated),]
+            # Plot Bar Graph
+            region_plot <- ggplot(region, aes(x = reorder(location, people_fully_vaccinated), y = people_fully_vaccinated, location = location)) +
+              geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People fully vaccinated") +
+              theme(axis.title.y = element_blank(),
+                    axis.line.x = element_line(color = "black", size = 1),
+                    panel.grid.major.x = element_line(color="grey", size=1),
+                    panel.background = element_blank()) + 
+              coord_flip() 
+            
+            ggplotly(region_plot, tooltip=c("location", "y"))
+          }
+          else{
+            # If specific region is selected
+            if(input$region=="Region of the Americas"){
+              region <- combined_3 %>% filter(WHO_region == "AMRO")
+              region <- region[!is.na(region$people_fully_vaccinated),]
+              # Plot Bar Graph
+              region_plot <- ggplot(region, aes(x = reorder(location, people_fully_vaccinated), y = people_fully_vaccinated, location = location)) +
+                geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People fully vaccinated") +
+                theme(axis.title.y = element_blank(),
+                      axis.line.x = element_line(color = "black", size = 1),
+                      panel.grid.major.x = element_line(color="grey", size=1),
+                      panel.background = element_blank()) + 
+                coord_flip() 
+              
+              ggplotly(region_plot, tooltip=c("location", "y"))
+            }
+            else{
+              # If specific region is selected
+              if(input$region=="Eastern Mediterranean Region"){
+                region <- combined_3 %>% filter(WHO_region == "EMRO")
+                region <- region[!is.na(region$people_fully_vaccinated),]
+                # Plot Bar Graph
+                region_plot <- ggplot(region, aes(x = reorder(location, people_fully_vaccinated), y = people_fully_vaccinated, location = location)) +
+                  geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People fully vaccinated") +
+                  theme(axis.title.y = element_blank(),
+                        axis.line.x = element_line(color = "black", size = 1),
+                        panel.grid.major.x = element_line(color="grey", size=1),
+                        panel.background = element_blank()) + 
+                  coord_flip() 
+                
+                ggplotly(region_plot, tooltip=c("location", "y"))
+              }
+              else{
+                # If specific region is selected
+                if(input$region=="European Region"){
+                  region <- combined_3 %>% filter(WHO_region == "EURO")
+                  region <- region[!is.na(region$people_fully_vaccinated),]
+                  # Plot Bar Graph
+                  region_plot <- ggplot(region, aes(x = reorder(location, people_fully_vaccinated), y = people_fully_vaccinated, location = location)) +
+                    geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People fully vaccinated") +
+                    theme(axis.title.y = element_blank(),
+                          axis.line.x = element_line(color = "black", size = 1),
+                          panel.grid.major.x = element_line(color="grey", size=1),
+                          panel.background = element_blank()) + 
+                    coord_flip() 
+                  
+                  ggplotly(region_plot, tooltip=c("location", "y"))
+                }
+                else{
+                  # If specific region is selected
+                  if(input$region=="South-East Asia Region"){
+                    region <- combined_3 %>% filter(WHO_region == "SEARO")
+                    region <- region[!is.na(region$people_fully_vaccinated),]
+                    # Plot Bar Graph
+                    region_plot <- ggplot(region, aes(x = reorder(location, people_fully_vaccinated), y = people_fully_vaccinated, location = location)) +
+                      geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People fully vaccinated") +
+                      theme(axis.title.y = element_blank(),
+                            axis.line.x = element_line(color = "black", size = 1),
+                            panel.grid.major.x = element_line(color="grey", size=1),
+                            panel.background = element_blank()) + 
+                      coord_flip() 
+                    
+                    ggplotly(region_plot, tooltip=c("location", "y"))
+                  }
+                  else{
+                    # If specific region is selected
+                    if(input$region=="Western Pacific Region"){
+                      region <- combined_3 %>% filter(WHO_region == "WPRO")
+                      region <- region[!is.na(region$people_fully_vaccinated),]
+                      # Plot Bar Graph
+                      region_plot <- ggplot(region, aes(x = reorder(location, people_fully_vaccinated), y = people_fully_vaccinated, location = location)) +
+                        geom_bar(stat="identity", color='black',fill= "steelblue") + ylab("People fully vaccinated") +
+                        theme(axis.title.y = element_blank(),
+                              axis.line.x = element_line(color = "black", size = 1),
+                              panel.grid.major.x = element_line(color="grey", size=1),
+                              panel.background = element_blank()) + 
+                        coord_flip() 
+                      
+                      ggplotly(region_plot, tooltip=c("location", "y"))
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  
+  ################################################
+  #### Panel: Summary                         ####
+  ################################################
+  
+  output$testing_score <- renderPlotly({
+    # store selected countries
+    countries <- input$countries_one
+    
+    t = total %>% filter(location %in% countries)
+    # plot smoothed testing score for selected countries using faceted line graphs
+    if (input$smooth_one == TRUE) {
+      ggplot() +
+        geom_line(data = t, aes(x = date, y = testing_score_smooth, color = location)) +
+        facet_wrap(~location, scales="fix",ncol = 2) + theme_bw() +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              strip.background = element_blank(),
+              panel.border = element_rect(colour = "black", fill = NA)) + ylab("normalised values") + labs(title = "Figure 1: Testing performance")
+    }
+    # plot testing scores for selected countries using faceted line graphs
+    else {
+      ggplot() +
+        geom_line(data = t, aes(x = date, y = testing_score, color = location)) +
+        facet_wrap(~location, scales="fix",ncol = 2) + theme_bw() +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              strip.background = element_blank(),
+              panel.border = element_rect(colour = "black", fill = NA)) + ylab("normalised values") + labs(title = "Figure 1: Testing performance")
+    }
+  })
+  
+  output$vaccination_score <- renderPlotly({
+    # store selected countries
+    countries <- input$countries_one
+    
+    v = total %>% filter(location %in% countries)
+    # plot smoothed vaccination score for selected countries using faceted line graphs
+    if (input$smooth_one == TRUE) {
+      ggplot() +
+        geom_line(data = v, aes(x = date, y = vaccination_score_smooth, color = location)) +
+        facet_wrap(~location, scales="fix",ncol = 2) + 
+        theme_bw()+
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              strip.background = element_blank(),
+              panel.border = element_rect(colour = "black", fill = NA)) + ylab("Smooth and normalised values") + labs(title = "Figure 2: Vaccination performance")
+    }
+    # plot smoothed vaccination score for selected countries using faceted line graphs
+    else {
+      ggplot() +
+        geom_line(data = v, aes(x = date, y = vaccination_score, color = location)) +
+        facet_wrap(~location, scales="fix",ncol = 2) + 
+        theme_bw()+
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              strip.background = element_blank(),
+              panel.border = element_rect(colour = "black", fill = NA)) + ylab("Normalised values") + labs(title = "Figure 2: Vaccination performance")
+    }
+  })
+  
+  output$policy_score <- renderPlotly({
+    # store selected countries
+    countries <- input$countries_one
+    # plot smoothed policy score for selected countries using faceted line graphs
+    p = total %>% filter(location %in% countries)
+    if (input$smooth_one == TRUE) {
+      ggplot() +
+        geom_line(data = p, aes(x = date, y = policy_score_smooth, color = location)) +
+        facet_wrap(~location, scales="fix",ncol = 2) + 
+        theme_bw() +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              strip.background = element_blank(),
+              panel.border = element_rect(colour = "black", fill = NA))+ ylab("Smooth and normalised values") + labs(title = "Figure 3: Policy performance")
+    }
+    # plot policy score for selected countries using faceted line graphs
+    else {
+      ggplot() +
+        geom_line(data = p, aes(x = date, y = policy_score, color = location)) +
+        facet_wrap(~location, scales="fix",ncol = 2) + 
+        theme_bw() +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              strip.background = element_blank(),
+              panel.border = element_rect(colour = "black", fill = NA))+ ylab("Normalised values") + labs(title = "Figure 3: Policy performance")
+    }
+  })
+  
+  output$total_score <- renderPlotly({
+    # store selected countries
+    countries <- input$countries_one
+    
+    p = total %>% filter(location %in% countries)
+    # plot smoothed overall performance for selected countries using faceted line graphs
+    if (input$smooth_one == TRUE) {
+      ggplot() +
+        geom_line(data = p, aes(x = date, y = index_smooth, color = location)) +
+        facet_wrap(~location, scales="fix",ncol = 2) + 
+        theme_bw() +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              strip.background = element_blank(),
+              panel.border = element_rect(colour = "black", fill = NA))+ ylab("Smooth and normalised values") + labs(title = "Figure 4: Overall performance")
+    }
+    else {
+      # plot overall performance for selected countries using faceted line graphs
+      ggplot() +
+        geom_line(data = p, aes(x = date, y = index, color = location)) +
+        facet_wrap(~location, scales="fix",ncol = 2) + 
+        theme_bw() +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              strip.background = element_blank(),
+              panel.border = element_rect(colour = "black", fill = NA))+ ylab("Normalised values") + labs(title = "Figure 4: Overall performance")
+    }
+  })
+  
+  output$total_score_clustered <- renderPlotly({
+    # store selected countries
+    countries <- input$countries_two
+    k = input$k
+    # check if number of selected countries is less than selected clusters k
+    if (length(countries) < k) {
+      k = length(countries)
+    }
+    # check if user selects world map
+    if(input$D=="2"){
+      # creating cluster matrix 
+      cluster_matrix <- total %>% 
+        dplyr::select(location, date, index_smooth) %>%
+        pivot_wider(names_from = location, values_from = index_smooth) %>%
+        arrange(date) %>% 
+        replace(is.na(.), 0) %>%
+        as.data.frame()
+      
+      rownames(cluster_matrix) <- cluster_matrix$date
+      cluster_matrix <- cluster_matrix %>% dplyr::select(-date)
+      
+      # creating clusters using cosine distancing and ward.D2 clustering method     
+      cluster_matrix_cosine_dist <- proxy::dist(t(cluster_matrix), method = "cosine")
+      hclust_cluster <- hclust(cluster_matrix_cosine_dist, method = "ward.D2")
+      # selecting number of clusters
+      hclust_cluster_k <- stats::cutree(hclust_cluster, k = 5) %>% as.factor %>% as.data.frame()
+      total$cluster <-  hclust_cluster_k[as.character(total$location), 1]
+      total$cluster = as.integer(total$cluster)
+      # removing duplicate rows
+      clusters = total %>% select (location,cluster) %>% group_by(location) %>% summarise(c = sum(cluster)/n())
+      
+      # plotting world map displays countries in clusters
+      world_map_cluster <- merge(world_map, clusters, 
+                                 by.x = "region", by.y = "location",
+                                 all.x = TRUE)
+      world_map_cluster <- world_map_cluster[order(world_map_cluster$order), ]
+      
+      world_map_cluster$c = as.character(world_map_cluster$c)
+      cluster_map = ggplot(world_map_cluster,  
+                           aes(x = long, y = lat, group = group, fill = c,region=region)) +
+        geom_polygon()  +
+        xlab("") + ylab("") + ggtitle("Map of World") +
+        theme_void() +
+        theme(panel.grid = element_blank(), axis.ticks.x = element_blank(), axis.ticks.y = element_blank())         +
+        labs(title = paste('COVID19: Country/Region performance in clusters'),
+             fill = "")
+      ggplotly(cluster_map)
+    }
+    # user selects faceted line graphs
+    else{
+      # check if only one country is selected
+      if (length(countries) == 1) {
+        temp = total %>% filter(location %in% countries)
+        ggplot() +
+          geom_line(data = temp, aes(x = date, y = index_smooth, color = location)) +
+          facet_wrap(~location, scales="fix",ncol = 3) + 
+          theme_bw() +
+          theme(panel.grid.major = element_blank(),
+                panel.grid.minor = element_blank(),
+                strip.background = element_blank(),
+                panel.border = element_rect(colour = "black", fill = NA))+ ylab("Smooth and normalised values") + labs(title = "Figure 5: Performance score of countries in clusters")
+      }
+      else {
+        
+        
+        selected_total = total  %>% filter(location %in% countries)
+        # creating cluster matrix for selected countries
+        total_matrix <- selected_total %>% 
+          dplyr::select(location, date, index_smooth) %>%
+          pivot_wider(names_from = location, values_from = index_smooth) %>%
+          arrange(date) %>% 
+          replace(is.na(.), 0) %>%
+          as.data.frame()
+        
+        rownames(total_matrix) <- total_matrix$date
+        total_matrix <- total_matrix %>% dplyr::select(-date)
+        
+        # creating clusters using cosine distancing and ward.D2 clustering method  
+        total_matrix_cosine_dist <- proxy::dist(t(total_matrix), method = "cosine")
+        hclust_total <- hclust(total_matrix_cosine_dist, method = "ward.D2")
+        # selecting number of clusters
+        hclust_cluster_total <- stats::cutree(hclust_total, k = k) %>% as.factor %>% as.data.frame()
+        # plot faceted line graph to show countries with same cluster
+        selected_total$cluster <-  hclust_cluster_total[as.character(selected_total$location), 1]
+        ggplot() +
+          geom_line(data = selected_total, aes(x = date, y = index_smooth, color = location)) +
+          facet_wrap(~cluster, scale = "fixed", ncol = 2) +
+          theme_bw() +ylab("Smooth and normalised indices") + labs(title = "Figure 5: Performance score of countries in clusters")
+      }
+      
+    }
+  })
+  
+  output$cluster <- renderPlot({
+    countries <- input$countries_two
+    k = input$k
+    if (length(countries) < k) {
+      k = length(countries)
+    }
+    # plot dendrogram when there are more than one countries
+    if(length(countries)>1){
+      # creating cluster matrix for selected countries
+      selected_total = total  %>% filter(location %in% countries)
+      total_matrix <- selected_total %>% 
+        dplyr::select(location, date, index_smooth) %>%
+        pivot_wider(names_from = location, values_from = index_smooth) %>%
+        arrange(date) %>% 
+        replace(is.na(.), 0) %>%
+        as.data.frame()
+      
+      rownames(total_matrix) <- total_matrix$date
+      total_matrix <- total_matrix %>% dplyr::select(-date)
+      
+      # creating clusters using cosine distancing and ward.D2 clustering method  
+      total_matrix_cosine_dist <- proxy::dist(t(total_matrix), method = "cosine")
+      hclust_total <- hclust(total_matrix_cosine_dist, method = "ward.D2")
+      # plot dendrogram
+      hcd <- as.dendrogram(hclust_total)
+      plot(hcd, type="rectangle", ylab="Height")
+    }
+    
+    
+  })
+  
+  output$dt <- renderDT({
+    dt
+  })
+  
+  ################################################
+  #### Panel: Documentation                   ####
+  ################################################
+  
+  getPageDoc <- function() {
+    return(includeHTML("documentation.html"))
+  }
+  output$doc <- renderUI({
+    getPageDoc()
+  })
+  
+  ################################################
+  #### Panel: About                           ####
+  ################################################
+  
+  getPageAbo <- function() {
+    return(includeHTML("about.html"))
+  }
+  output$abo <- renderUI({
+    getPageAbo()
+  })
+  
+}
+
+#---------------------------global.R-----------------------------
+library(tidyverse)
+library(readxl)
+library(tibble)
+library(janitor)
+library(reshape2)
+library(ggplot2)
+library(ggthemes)
+library(plotly)
+library(pheatmap)
+library(maps)
+library(zoo)
+library(dendextend)
+library(proxy)
+library(DT)
+library(lubridate)
+library(forecast)
+library(readr)
+library(fpp2)
+library(sparkline)
+library(TTR)
+library(tseries)
+
+
+#######################
+#     Vaccination     #
+#######################
+
+vaccine = read.csv("data/vaccinations.csv")
+vaccination_raw <- vaccine
+# Convert date column to a datetime
+vaccine$date <- as.Date(vaccine$date)
+# The following were removed as they are not "Countries"
+vaccine <- vaccine[vaccine$location != "Africa" & vaccine$location != "North America" 
+                       & vaccine$location != "Europe" & vaccine$location != "South America"
+                       & vaccine$location != "Asia",]
+
+vaccine_names <- read.csv("data/country_vaccinations.csv")
+# Convert date column to a datetime
+vaccine_names$date <- as.Date(vaccine_names$date)
+df <- subset(vaccine_names, country=="Afghanistan")
+df <- tail(df, 1)
+vaccine_names <- vaccine_names[vaccine_names$country != "Afghanistan",]
+# Select each country individually
+unique_countries <- unique(vaccine_names$country)
+for(i in unique_countries){
+  new_df <- subset(vaccine_names, country==i)
+  new_df <- tail(new_df, 1)
+  df <- rbind(df, new_df)
+}
+
+# Remove of NAs
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+total_vacc_na_removed <- as.data.frame(completeFun(vaccine, "total_vaccinations"))
+grouped_df <- subset(total_vacc_na_removed, location=="Afghanistan")
+grouped_df <- tail(grouped_df, 1)
+total_vacc_na_removed <- total_vacc_na_removed[total_vacc_na_removed$location != "Afghanistan",]
+who_countries <- unique(total_vacc_na_removed$location)
+
+# Subsetting of data to select desired information 
+for(i in who_countries){
+  new_df <- subset(total_vacc_na_removed, location==i)
+  new_df <- tail(new_df, 1)
+  grouped_df <- rbind(grouped_df, new_df)
+}
+
+#####################################################################################################################
+
+##################
+#     Testing    #
+##################
+
+
+tests = read.csv("data/covid-19-testing-policy.csv")
+
+#Changing values for testing policy
+tests <- tests %>%
+  mutate(testing_policy = replace(testing_policy, testing_policy == "0","0 - No testing tests")) %>% 
+  mutate(testing_policy = replace(testing_policy, testing_policy == "1","1 - Symptoms & key groups")) %>%
+  mutate(testing_policy = replace(testing_policy, testing_policy == "2", "2 - Anyone with symptoms"))%>%
+  mutate(testing_policy = replace(testing_policy, testing_policy == "3", "3 - Open public testing (incl. asymptomatic)"))
+
+#Changing to date format
+tests$Day <- as.Date(tests$Day)
+
+#Loading world map and replacing country names
+world_map <- map_data("world")
+world_map <- world_map %>%
+  mutate(region = replace(region, region == "UK","United Kingdom")) %>%
+  mutate(region = replace(region, region == "USA","United States")) %>%
+  mutate(region = replace(region, region == "USA", "United States Virgin Islands"))%>%
+  mutate(region = replace(region, region == "Democratic Republic of the Congo", "Congo"))%>%
+  mutate(region = replace(region, region == "Republic of Congo", "Congo"))%>%
+  mutate(region = replace(region, region == "Ivory Coast", "Cote d'Ivoire"))%>%
+  mutate(region = replace(region, region == "Czech Republic", "Czechia"))
+
+testing <- read.csv("data/owid-testing.csv")
+testing_raw <- testing
+testing <- testing %>% select("iso_code","continent","location","date","total_tests", "new_tests_smoothed")
+
+#Remove NA values
+testing2 <- na.omit(testing)
+
+#Change to date format
+testing2$date <- as.Date(testing2$date)
+
+#####################################################################################################################
+
+##########################
+#     Global Summary    #
+########################
+
+covid <- read.csv("https://covid19.who.int/WHO-COVID-19-global-data.csv")
+
+#Converting to date format
+names(covid)[1] <- "Date"
+covid$Date <- as.Date(covid$Date)
+
+#Setting minimum cases to 0
+covid$New_cases[covid$New_cases<0] <- 0 
+
+#Making new dataframes by WHO region
+wpro <- subset(covid, WHO_region =="WPRO")
+afro <- subset(covid, WHO_region =="AFRO")
+amro <- subset(covid, WHO_region =="AMRO")
+searo <- subset(covid, WHO_region =="SEARO")
+euro <- subset(covid, WHO_region =="EURO")
+emro <- subset(covid, WHO_region =="EMRO")
+other <- subset(covid, WHO_region =="Other")
+
+#For each region, get new cases and deaths, and total cases and deaths for each date
+wpro <- subset(wpro, select=-c(Country, Country_code, WHO_region))
+wpro <- aggregate(wpro[-1], wpro[1], sum)
+WHO_region <- rep("Western Pacific Region", times=length(wpro$Date))
+wpro <- cbind(wpro, WHO_region)
+
+afro <- subset(afro, select=-c(Country, Country_code, WHO_region))
+afro <- aggregate(afro[-1], afro[1], sum)
+WHO_region <- rep("African Region", times=length(afro$Date))
+afro <- cbind(afro, WHO_region)
+
+amro <- subset(amro, select=-c(Country, Country_code, WHO_region))
+amro <- aggregate(amro[-1], amro[1], sum)
+WHO_region <- rep("American Region", times=length(amro$Date))
+amro <- cbind(amro, WHO_region)
+
+searo <- subset(searo, select=-c(Country, Country_code, WHO_region))
+searo <- aggregate(searo[-1], searo[1], sum)
+WHO_region <- rep("South-East Asia Region", times=length(searo$Date))
+searo <- cbind(searo, WHO_region)
+
+euro <- subset(euro, select=-c(Country, Country_code, WHO_region))
+euro <- aggregate(euro[-1], euro[1], sum)
+WHO_region <- rep("European Region", times=length(euro$Date))
+euro <- cbind(euro, WHO_region)
+
+emro <- subset(emro, select=-c(Country, Country_code, WHO_region))
+emro <- aggregate(emro[-1], emro[1], sum)
+WHO_region <- rep("Eastern Mediterranean Region", times=length(emro$Date))
+emro <- cbind(emro, WHO_region)
+
+#Merge WHO region datasets
+final <- rbind(amro, afro, emro, euro, searo, wpro)
+
+test <- filter(covid, Date==max(Date))
+#test <- filter(covid, Date=="2021-04-03")
+test <- test[,-c(1,2,4)]
+
+covid_new <- covid[,-c(2,4)]
+
+#Creating a sparkline dataset
+sparkline_test <- covid_new %>% 
+  group_by(Country) %>%
+  summarize(
+    TrendSparkLine = spk_chr(
+      New_cases, type="line",
+      chartRangeMin = 0, chartRangeMax = max(Date)
+    )
+  )
+
+#Joining sparkline and covid dataset
+covid_final <- left_join(test, sparkline_test)
+
+covid_final <- covid_final[,c(1,6,2,3,4,5)]
+
+covid_final <- covid_final[order(-covid_final$New_cases),]
+rownames(covid_final) <- order(rownames(covid_final))
+covid_final$New_cases <- format(covid_final$New_cases,big.mark=",")
+covid_final$Cumulative_cases <- format(covid_final$Cumulative_cases,big.mark=",")
+covid_final$New_deaths <- format(covid_final$New_deaths,big.mark=",")
+covid_final$Cumulative_deaths <- format(covid_final$Cumulative_deaths,big.mark=",")
+
+
+###################
+#     Policy     #
+##################
+
+#policy <- read.csv("https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/OxCGRT_latest.csv")
+policy <- read.csv("data/OxCGRT_latest.csv")
+policy_raw <- policy
+
+#Formatting date
+policy$Date <- as.Date(as.character(policy$Date),"%Y%m%d")
+
+#Changing values for each policy
+policy$C1_School.closing[policy$C1_School.closing==0] <- "0 - No measures"
+policy$C1_School.closing[policy$C1_School.closing==1] <- "1 - Recommended"
+policy$C1_School.closing[policy$C1_School.closing==2] <- "2 - Required at some levels"
+policy$C1_School.closing[policy$C1_School.closing==3] <- "3 - Required at all levels"
+
+policy$C2_Workplace.closing[policy$C2_Workplace.closing==0] <- "0 - No measures"
+policy$C2_Workplace.closing[policy$C2_Workplace.closing==1] <- "1 - Recommended"
+policy$C2_Workplace.closing[policy$C2_Workplace.closing==2] <- "2 - Required for some"
+policy$C2_Workplace.closing[policy$C2_Workplace.closing==3] <- "3 - Required for all but key workers"
+
+policy$C3_Cancel.public.events[policy$C3_Cancel.public.events==0] <- "0 - No measures"
+policy$C3_Cancel.public.events[policy$C3_Cancel.public.events==1] <- "1 - Recommended"
+policy$C3_Cancel.public.events[policy$C3_Cancel.public.events==2] <- "2 - Required"
+
+policy$C4_Restrictions.on.gatherings[policy$C4_Restrictions.on.gatherings==0] <- "0 - No restrictions"
+policy$C4_Restrictions.on.gatherings[policy$C4_Restrictions.on.gatherings==1] <- "1 - >1000 people"
+policy$C4_Restrictions.on.gatherings[policy$C4_Restrictions.on.gatherings==2] <- "2 - 101-1000 people"
+policy$C4_Restrictions.on.gatherings[policy$C4_Restrictions.on.gatherings==3] <- "3 - 11-100 people"
+policy$C4_Restrictions.on.gatherings[policy$C4_Restrictions.on.gatherings==4] <- "4 - <10 people"
+
+policy$C5_Close.public.transport[policy$C5_Close.public.transport==0] <- "0 - No measures"
+policy$C5_Close.public.transport[policy$C5_Close.public.transport==1] <- "1 - Recommended closing"
+policy$C5_Close.public.transport[policy$C5_Close.public.transport==2] <- "2 - Required closing"
+
+policy$C6_Stay.at.home.requirements[policy$C6_Stay.at.home.requirements==0] <- "0 - No measures"
+policy$C6_Stay.at.home.requirements[policy$C6_Stay.at.home.requirements==1] <- "1 - Recommended"
+policy$C6_Stay.at.home.requirements[policy$C6_Stay.at.home.requirements==2] <- "2 - Required (except essentials)"
+policy$C6_Stay.at.home.requirements[policy$C6_Stay.at.home.requirements==3] <- "3 - Required (few exceptions)"
+
+policy$C7_Restrictions.on.internal.movement[policy$C7_Restrictions.on.internal.movement==0] <- "0 - No measures"
+policy$C7_Restrictions.on.internal.movement[policy$C7_Restrictions.on.internal.movement==1] <- "1 - Recommended movement restriction"
+policy$C7_Restrictions.on.internal.movement[policy$C7_Restrictions.on.internal.movement==2] <- "2 - Restrict movement"
+
+policy$C8_International.travel.controls[policy$C8_International.travel.controls==0] <- "0 - No restrictions"
+policy$C8_International.travel.controls[policy$C8_International.travel.controls==1] <- "1 - Screening"
+policy$C8_International.travel.controls[policy$C8_International.travel.controls==2] <- "2 - Quarantine from high-risk regions"
+policy$C8_International.travel.controls[policy$C8_International.travel.controls==3] <- "3 - Ban on high-risk regions"
+policy$C8_International.travel.controls[policy$C8_International.travel.controls==4] <- "4 - Total border closure"
+
+policy$H1_Public.information.campaigns[policy$H1_Public.information.campaigns==0] <- "0 - None"
+policy$H1_Public.information.campaigns[policy$H1_Public.information.campaigns==1] <- "1 - Public officials urging caution"
+policy$H1_Public.information.campaigns[policy$H1_Public.information.campaigns==2] <- "2 - Coordinated information campaign"
+
+policy$H2_Testing.policy[policy$H2_Testing.policy==0] <- "0 - No policy"
+policy$H2_Testing.policy[policy$H2_Testing.policy==1] <- "1 - Symptoms & key groups"
+policy$H2_Testing.policy[policy$H2_Testing.policy==2] <- "2 - Anyone with symptoms"
+policy$H2_Testing.policy[policy$H2_Testing.policy==3] <- "3 - Open public testing"
+
+policy$H3_Contact.tracing[policy$H3_Contact.tracing==0] <- "0 - No tracing"
+policy$H3_Contact.tracing[policy$H3_Contact.tracing==1] <- "1 - Limited tracing"
+policy$H3_Contact.tracing[policy$H3_Contact.tracing==2] <- "2 - Comprehensive tracing"
+
+policy$H6_Facial.Coverings[policy$H6_Facial.Coverings==0] <- "0 - No policy"
+policy$H6_Facial.Coverings[policy$H6_Facial.Coverings==1] <- "1 - Recommended"
+policy$H6_Facial.Coverings[policy$H6_Facial.Coverings==2] <- "2 - Required in some public places"
+policy$H6_Facial.Coverings[policy$H6_Facial.Coverings==3] <- "3 - Required in all public places"
+policy$H6_Facial.Coverings[policy$H6_Facial.Coverings==4] <- "4 - Required outside the home at all times"
+
+policy$H7_Vaccination.policy[policy$H7_Vaccination.policy==0] <- "0 - None"
+policy$H7_Vaccination.policy[policy$H7_Vaccination.policy==1] <- "1 - One group"
+policy$H7_Vaccination.policy[policy$H7_Vaccination.policy==2] <- "2 - Two groups"
+policy$H7_Vaccination.policy[policy$H7_Vaccination.policy==3] <- "3 - All vulnerable groups"
+policy$H7_Vaccination.policy[policy$H7_Vaccination.policy==4] <- "4 - Vulnerable + some others"
+policy$H7_Vaccination.policy[policy$H7_Vaccination.policy==5] <- "5 - Universal availability"
+
+policy$H8_Protection.of.elderly.people[policy$H8_Protection.of.elderly.people==0] <- "0 - No measures"
+policy$H8_Protection.of.elderly.people[policy$H8_Protection.of.elderly.people==1] <- "1 - Recommended isolation"
+policy$H8_Protection.of.elderly.people[policy$H8_Protection.of.elderly.people==2] <- "2 - Narrow restrictions"
+policy$H8_Protection.of.elderly.people[policy$H8_Protection.of.elderly.people==3] <- "3 - Extensive restrictions"
+
+#####################################################################################################################
+
+
+# normalization function
+
+
+###################
+#     Summary    #
+##################
+
+# normalize function
+
+scaleMinMax <- function(x){
+  (x - min(x)) / (max(x) - min(x))
+}
+# smoothing function
+wrapLowess <- function(data, f) {
+  lowess_fit <- lowess(data, f = f)
+  lowess_fit$y
+}
+
+# selecting variables for score calculation
+vaccination = vaccination_raw %>% select(location,date,daily_vaccinations_per_million)
+testing_new = testing_raw %>% select(location,date,new_tests_per_thousand)
+policy_new = policy_raw %>% select(CountryName,Date,ContainmentHealthIndexForDisplay) 
+# changing dates to date data type with consistent format
+policy_new$Date <- as.Date(as.character(policy_new$Date),"%Y%m%d")
+testing_new$date = as.Date(testing_new$date)
+vaccination$date = as.Date(vaccination$date)
+# removing all countries with half missing values, and converting NAs to 0
+vac_country = vaccination %>% select(location,daily_vaccinations_per_million) %>% group_by(location) %>% summarise(missing_rate = sum(is.na(daily_vaccinations_per_million)) / n())
+vac_country = vac_country[which(vac_country$missing_rate <= 0.5),]
+test_country = testing_new %>% select(location,new_tests_per_thousand) %>% group_by(location) %>% summarise(missing_rate = sum(is.na(new_tests_per_thousand)) / n())
+test_country = test_country[which(test_country$missing_rate <= 0.5),]
+pol_country = policy_new %>% select(CountryName,ContainmentHealthIndexForDisplay) %>% group_by(CountryName) %>% summarise(missing_rate = sum(is.na(ContainmentHealthIndexForDisplay)) / n())
+pol_country = pol_country[which(pol_country$missing_rate <= 0.5),]
+testing_new$new_tests_per_thousand[is.na(testing_new$new_tests_per_thousand)] <- 0
+vaccination$daily_vaccinations_per_million[is.na(vaccination$daily_vaccinations_per_million)] <- 0
+policy_new$ContainmentHealthIndexForDisplay[is.na(policy_new$ContainmentHealthIndexForDisplay)] <- 0
+a = intersect(vac_country$location,test_country$location)
+# filtering countries with data in all three datasets and removing data before outbreak date
+countries = intersect(a,pol_country$CountryName)
+outbreak_date = "2020-02-15"
+vaccination = vaccination %>% select(location,date,daily_vaccinations_per_million) %>% filter(location %in% countries)
+testing_new = testing_new %>% select(location,date,new_tests_per_thousand) %>% filter(location %in% countries) %>% filter(date >= outbreak_date)
+policy_new = policy_new %>% select(CountryName,Date,ContainmentHealthIndexForDisplay) %>% filter(CountryName %in% countries) %>% filter(Date >= outbreak_date)
+
+# calculating vacciantion score and testing score by normalizing testing and vaccination data between countries
+date = min(testing_new$date)
+end_date = max(testing_new$date)
+max(testing_new$date)- min(testing_new$date)
+testing_new$testing_score = 0.0
+while (date <= end_date){
+  testing_new[which(testing_new$date == date),]$testing_score = 
+    round(scaleMinMax(testing_new[which(testing_new$date == date),]$new_tests_per_thousand) * 100,2)
+  date = date + 1
+}
+
+
+date = min(vaccination$date)
+end_date = max(vaccination$date)
+vaccination$vaccination_score = 0.0
+while (date <= end_date){
+  vaccination[which(vaccination$date == date),]$vaccination_score = 
+    round(scaleMinMax(vaccination[which(vaccination$date == date),]$daily_vaccinations_per_million) * 100,2)
+  date = date + 1
+}
+
+# Averaging countries with multipule values, since there are countries contain more than one regions
+policy1 = policy_new %>% select(CountryName,Date, ContainmentHealthIndexForDisplay) %>% group_by(CountryName,Date) %>% summarise(policy_score = sum(ContainmentHealthIndexForDisplay)/n())
+names(policy1)[1] = "location"
+names(policy1)[2] = "date"
+
+# merging all three areas into one dataframe
+t_v <- merge(testing_new,vaccination ,by=c("location","date"),all.x=TRUE)
+total = merge(t_v,policy1,by=c("location","date"),all.x=TRUE)
+total$vaccination_score [is.na(total$vaccination_score)] <- 0
+total$testing_score [is.na(total$testing_score)] <- 0
+total$policy_score[is.na(total$policy_score)] <- 0
+
+# calculating overall performane by summing these three areas toghther
+total$index = total$testing_score+total$vaccination_score+total$policy_score
+
+# smoothing scores
+total = total %>% select(location,date,testing_score,vaccination_score,policy_score,index)
+total$testing_score_smooth = 0.0
+total$vaccination_score_smooth = 0.0
+total$policy_score_smooth= 0.0
+total$index_smooth = 0.0
+for (x in countries){
+  # index
+  total[which(total$location == x),]$index_smooth = 
+    wrapLowess(total[which(total$location == x),]$index, 0.05)
+  # testing
+  total[which(total$location == x),]$testing_score_smooth = 
+    wrapLowess(total[which(total$location == x),]$testing_score, 0.05)
+  # vaccination
+  total[which(total$location == x),]$vaccination_score_smooth = 
+    wrapLowess(total[which(total$location == x),]$vaccination_score, 0.05)
+  # policy
+  total[which(total$location == x),]$policy_score_smooth = 
+    wrapLowess(total[which(total$location == x),]$policy_score, 0.05)
+}
+
+# creating performance data table
+
+performance_mean = total %>% select (location,date,index) %>% group_by(location) %>% summarise(index_mean = sum(index)/n())
+
+performance_graph <- total %>% 
+  group_by(location) %>%
+  summarize(
+    TrendSparkLine = spk_chr(
+      index, type="line",
+      chartRangeMin = 0, chartRangeMax = max(date)
+    )
+  )
+
+performance_final <- left_join(performance_mean, performance_graph)
+performance_final <- performance_final[,c(1,3,2)]
+performance_final[,3] = round(performance_final[,3] ,2)
+
+dt=  datatable(performance_final, colnames=c("Country/Region", "Trend", "Performance Score"), rownames = F,
+               escape = F, options = list(order=list(list(2, "desc")), pageLength=25, fnDrawCallback = htmlwidgets::JS(
+                 '
+            function(){
+            HTMLWidgets.staticRender();
+            }
+            '))) %>%
+  spk_add_deps()
+
+```
